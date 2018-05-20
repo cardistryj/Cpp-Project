@@ -1,1 +1,1 @@
-This is a repository about agar.io.
+This is a repository about my agar.io.
