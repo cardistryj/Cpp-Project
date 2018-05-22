@@ -16,5 +16,3 @@ int WINAPI _tWinMain(HINSTANCE hInstance,
     AppDelegate app;
     return Application::getInstance()->run();
 }
-
-//a little change for a test
