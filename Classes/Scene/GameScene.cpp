@@ -1,5 +1,6 @@
 #include "GameScene.h"
 #include "SimpleAudioEngine.h"
+#include"GameControler.h"
 #include"color.h"
 #include<cmath>
 
@@ -21,20 +22,32 @@ bool GameScene::init()
 	auto visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-	//create and add background
+	//创建并添加背景
 	auto bg = Sprite::create("startbackground.png");
-	bg->setScale(3.0);
+	bg->setScale(backgroundscale);
 	bg->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
 	bg->setTag(111);
 	this->addChild(bg, 0);
 
-	//create a player
-	auto player = Sprite::create("ball.png");
-	player->setColor(Color3B(Cyan));
-	player->setScale(0.05);
-	player->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
-	player->setTag(123);
-	this->addChild(player, 2);
+	//使用随机数随机生成颜色
+	srand((unsigned)time(NULL));
+
+	unsigned randomnumber = rand() % 12;
+
+	auto sprite = Sprite::create("ball.png");
+	sprite->setColor(Color3B(**(color + randomnumber), *(*(color + randomnumber) + 1), *(*(color + randomnumber) + 2)));
+	sprite->setScale(0.01);
+	sprite->setPosition(Vec2(500, 500));
+	sprite->setTag(1); //添加标签
+	bg->addChild(sprite, 1);  //添加至背景节点便于整体的放缩
+
+	//创建玩家
+	auto playersprite= Sprite::create("ball.png");
+	playersprite->setColor(Color3B(**(color+randomnumber),*(*(color+randomnumber)+1), *(*(color + randomnumber) + 2)));
+	playersprite->setScale(0.005*backgroundscale);
+	playersprite->setPosition(Vec2(bg->getContentSize().width / 2, bg->getContentSize().height / 2));
+	playersprite->setTag(123);
+	bg->addChild(playersprite, 2);  ////添加至背景节点便于整体的放缩
 
 	return true;
 }
@@ -43,27 +56,31 @@ void GameScene::onEnter()
 {
 	Scene::onEnter();
 	log("GameScene onEnter");
-	//use Mouse to move
+	//使用鼠标操作
 	auto listenerMouse = EventListenerMouse::create();
-	//use BackSpace to divide into two part
-	auto listenerKeyboard = EventListenerKeyboard::create();
-	/*
+	//auto listenerKeyboard = EventListenerKeyboard::create();
+	auto bg = this->getChildByTag(111);
+
 	listenerMouse->onMouseMove = [&](Event *event) {
 		EventMouse* e = (EventMouse*)event;
-		auto visibleSize = Director::getInstance()->getVisibleSize();
-		auto player = this->getChildByTag(123);
+		auto bg = this->getChildByTag(111);
 
-		//get relative displacement
-		x = e->getCursorX() - player->getPosition().x;
-		y = e->getCursorY() - player->getPosition().y;
+		//得到事件对背景的模型坐标
+		Vec2 eventpoint= bg->convertToNodeSpace(Vec2(e->getCursorX(),e->getCursorY()));
+
+		//得到事件与玩家的相对位移
+		x = eventpoint.x - (bg->getChildByTag(123))->getPosition().x;
+		y = eventpoint.y - (bg->getChildByTag(123))->getPosition().y;
+
+		//捕获r便于update使用
 		r = 0;
 		this->scheduleUpdate();
-	};*/
-
-	listenerMouse->onMouseDown = [](Event *event) {
-		////////////code to divive
 	};
 
+	listenerMouse->onMouseDown = [&](Event *event) {
+		//player.divide();
+	};
+	/*
 	listenerKeyboard->onKeyPressed = [&](EventKeyboard::KeyCode keycode, Event *event) {
 		switch (keycode) {
 		case EventKeyboard::KeyCode::KEY_BACKSPACE:
@@ -103,12 +120,12 @@ void GameScene::onEnter()
 		if (keycode == EventKeyboard::KeyCode::KEY_D)
 			x--;
 	};
+	*/
 
-
-	//register eventdispatcher
+	//注册监听器
 	EventDispatcher* eventDispatcher = Director::getInstance()->getEventDispatcher();
-	eventDispatcher->addEventListenerWithSceneGraphPriority(listenerMouse, getChildByTag(123));
-	eventDispatcher->addEventListenerWithSceneGraphPriority(listenerKeyboard, getChildByTag(123));
+	eventDispatcher->addEventListenerWithSceneGraphPriority(listenerMouse, bg->getChildByTag(123));
+	//eventDispatcher->addEventListenerWithSceneGraphPriority(listenerKeyboard, bg->getChildByTag(123));
 }
 
 void GameScene::onExit()
@@ -119,32 +136,36 @@ void GameScene::onExit()
 	Director::getInstance()->getEventDispatcher()->removeAllEventListeners();
 }
 
-void GameScene::update(float dt)	//use update to move background
+void GameScene::update(float dt)	//使用update函数移动背景
 {
-	auto visibleSize = Director::getInstance()->getVisibleSize();
+	//auto visibleSize = Director::getInstance()->getVisibleSize();
 	auto bg = this->getChildByTag(111);
-	auto player = this->getChildByTag(123);
+	auto sprite = bg->getChildByTag(123);
 
-	//get relative coordinates
-	Vec2 point = bg->convertToNodeSpace(player->getPosition());
+	//玩家的相对坐标
+	Vec2 point = sprite->getPosition();
 
-	//move by a unit vector
-	//judge if moved to the fringe
+	//move_x,move_y表示事实上需要移动的距离
 	float move_x = x;
 	float move_y = y; 
+
+	//判断边界情况
 	if (
 		(point.x <= 0 && x < 0)
 		|| (point.x >= bg->getContentSize().width&&x > 0)
 		)
 		move_x = 0;
-	else if (
+	if (
 		(point.y <= 0 && y < 0)
 		|| (point.y >= bg->getContentSize().height&&y > 0)
 		)
 		move_y = 0;
 	if (move_x != 0 || move_y != 0) {
 		r = sqrt(move_x*move_x + move_y*move_y);
-		bg->setPosition(bg->getPosition() - Vec2(move_x / r, move_y / r));
+		{
+			sprite->setPosition(point + Vec2(move_x / r, move_y / r)/ backgroundscale);  //需除去放缩的比例
+			bg->setPosition(bg->getPosition() - Vec2(move_x / r, move_y / r));
+		}
 	}
 }
 

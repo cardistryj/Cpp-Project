@@ -3,6 +3,8 @@
 
 class GameScene : public cocos2d::Scene
 {
+	//关于移动背景的三个参数
+	//r表示向量模长
 	float x = 0;
 	float y = 0;
 	float r = 0;
