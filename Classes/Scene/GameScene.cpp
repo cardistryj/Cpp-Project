@@ -4,7 +4,7 @@
 #include"color.h"
 #include<cmath>
 
-USING_NS_CC;
+
 
 Scene* GameScene::createScene()
 {
@@ -23,28 +23,39 @@ bool GameScene::init()
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
 	//创建并添加背景
-	auto bg = Sprite::create("startbackground.png");
+	auto bg = Sprite::create("background.png");
 	bg->setScale(backgroundscale);
 	bg->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
 	bg->setTag(111);
 	this->addChild(bg, 0);
 
-	//使用随机数随机生成颜色
+	////添加小球
+	//创建纹理缓存对象
+	Texture2D *texture = Director::getInstance()->getTextureCache()->addImage("ball.png");
+
+	//使用时间初始化随机数种子
 	srand((unsigned)time(NULL));
 
+	//初始化Vector
+	spriteVector = Vector<Sprite*>(int(MAX_NUMBER_PARAMETER*backgroundscale));
+	for (int i = 0; i < int(MAX_NUMBER_PARAMETER*backgroundscale); i++){
+		//使用纹理生成小球
+		auto sprite = CCSprite::createWithTexture(texture);
+		//获得0~12的随机数
+		unsigned randomnumber = rand() % 12;
+		sprite->setColor(Color3B(**(color + randomnumber), *(*(color + randomnumber) + 1), *(*(color + randomnumber) + 2)));
+		sprite->setScale(0.03/backgroundscale);
+		sprite->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
+			, CCRANDOM_0_1()*bg->getContentSize().height));
+		bg->addChild(sprite, 1);  //添加至背景节点便于整体的放缩
+		spriteVector.pushBack(sprite);
+	}
+
 	unsigned randomnumber = rand() % 12;
-
-	auto sprite = Sprite::create("ball.png");
-	sprite->setColor(Color3B(**(color + randomnumber), *(*(color + randomnumber) + 1), *(*(color + randomnumber) + 2)));
-	sprite->setScale(0.01);
-	sprite->setPosition(Vec2(500, 500));
-	sprite->setTag(1); //添加标签
-	bg->addChild(sprite, 1);  //添加至背景节点便于整体的放缩
-
 	//创建玩家
 	auto playersprite= Sprite::create("ball.png");
 	playersprite->setColor(Color3B(**(color+randomnumber),*(*(color+randomnumber)+1), *(*(color + randomnumber) + 2)));
-	playersprite->setScale(0.005*backgroundscale);
+	playersprite->setScale(0.04/ backgroundscale);
 	playersprite->setPosition(Vec2(bg->getContentSize().width / 2, bg->getContentSize().height / 2));
 	playersprite->setTag(123);
 	bg->addChild(playersprite, 2);  ////添加至背景节点便于整体的放缩
@@ -72,9 +83,10 @@ void GameScene::onEnter()
 		x = eventpoint.x - (bg->getChildByTag(123))->getPosition().x;
 		y = eventpoint.y - (bg->getChildByTag(123))->getPosition().y;
 
-		//捕获r便于update使用
-		r = 0;
-		this->scheduleUpdate();
+		//计算模长r
+		r = sqrt(x*x + y*y);
+		if (x != 0 || y != 0)
+			this->scheduleUpdate();
 	};
 
 	listenerMouse->onMouseDown = [&](Event *event) {
@@ -105,7 +117,7 @@ void GameScene::onEnter()
 		x = (x < -1) ? -1 : x;
 		y = (y > 1) ? 1 : y;
 		y = (y < -1) ? -1 : y;
-		r = 0;
+		r = sqrt(x*x + y*y);
 		if (x!= 0||y!=0)
 			this->scheduleUpdate();
 	};
@@ -145,7 +157,7 @@ void GameScene::update(float dt)	//使用update函数移动背景
 	//玩家的相对坐标
 	Vec2 point = sprite->getPosition();
 
-	//move_x,move_y表示事实上需要移动的距离
+	//move_x,move_y表示事实上要移动的距离参量
 	float move_x = x;
 	float move_y = y; 
 
@@ -161,11 +173,8 @@ void GameScene::update(float dt)	//使用update函数移动背景
 		)
 		move_y = 0;
 	if (move_x != 0 || move_y != 0) {
-		r = sqrt(move_x*move_x + move_y*move_y);
-		{
 			sprite->setPosition(point + Vec2(move_x / r, move_y / r)/ backgroundscale);  //需除去放缩的比例
 			bg->setPosition(bg->getPosition() - Vec2(move_x / r, move_y / r));
-		}
 	}
 }
 
