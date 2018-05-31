@@ -31,3 +31,15 @@ Player* Player::create() {
 	}
 	return sprite;
 }
+
+Player* Player::playerclone(void)
+{
+	//创建一样的精灵
+	auto _player = Player::create();
+	_player->setScale(getScale());
+	_player->setColor(getColor());
+	_player->setPosition(getPosition());
+	_player->spritescale = spritescale;
+
+	return _player;
+}

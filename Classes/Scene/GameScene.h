@@ -8,7 +8,7 @@ class GameScene : public cocos2d::Scene
 {
 
 	//背景放缩比例
-	float backgroundscale = 3;
+	float backgroundscale = 4;
 
 	//关于移动背景的三个参数
 	float x = 0;

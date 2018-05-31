@@ -63,9 +63,22 @@ void GameScene::onEnter()
 			this->scheduleUpdate();
 	};
 
-	//listenerMouse->onMouseDown = [&](Event *event) {
-		//player.divide();
-//	};
+	listenerMouse->onMouseDown = [&](Event *event) {
+		EventMouse* e = (EventMouse*)event;
+		auto bg = this->getChildByTag(111);
+		//得到事件对背景的模型坐标
+		Vec2 eventpoint = bg->convertToNodeSpace(Vec2(e->getCursorX(), e->getCursorY()));
+
+		//得到事件与屏幕中心的相对位移
+		auto playersprite = *players.playervector.begin();
+		x = eventpoint.x - playersprite->getPosition().x;
+		y = eventpoint.y - playersprite->getPosition().y;
+
+		//计算模长r
+		r = sqrt(x*x + y*y);
+		gamecontroler.divide(bg, x, y, backgroundscale, r);
+
+	};
 
 	//auto listenerKeyboard = EventListenerKeyboard::create();
 
