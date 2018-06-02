@@ -40,6 +40,8 @@ Player* Player::playerclone(void)
 	_player->setColor(getColor());
 	_player->setPosition(getPosition());
 	_player->spritescale = spritescale;
+	_player->x = x;
+	_player->y = y;
 
 	return _player;
 }

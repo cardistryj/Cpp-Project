@@ -8,13 +8,13 @@ class GameScene : public cocos2d::Scene
 {
 
 	//背景放缩比例
-	float backgroundscale = 4;
+	float backgroundscale = DEFAULTBGSCALE;
+	//背景标签
+	int bgTag = 111;
 
-	//关于移动背景的三个参数
+	//关于移动背景和屏幕中心的三个参数
 	float x = 0;
 	float y = 0;
-	//r表示向量模长
-	float r = 0;
 
 	Circles  circles;
 	PlayerVector players;

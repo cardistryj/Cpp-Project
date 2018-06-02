@@ -2,7 +2,7 @@
 #include"cocos2d.h"
 //用于在屏幕上生成小球
 //定义最大小球数量
-#define MAXCIRCLENUMBER 400
+#define MAXCIRCLENUMBER 350
 //定义小球尺寸
 #define CIRCLESCALE 0.02
 

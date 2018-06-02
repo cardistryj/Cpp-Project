@@ -1,70 +1,121 @@
 #include"GameControler.h"
 USING_NS_CC;
-
-void GameControler::eat(Node* bg,float backgroundscale)
+#define SPEEDPARAMETER 1.3
+void GameControler::eat(Node* bg)
 {
 	//遍历小球容器和玩家的小球容器判断吞噬情况
 	for (auto circle : circles->spriteVector)
 	{
 		for (auto player : players->playervector)
-			if (isCircleCover(backgroundscale*(player->getPosition() - circle->getPosition()),
+			if (isCircleCover(DEFAULTBGSCALE*(player->getPosition() - circle->getPosition()),
 				player->getContentSize().width / 2 * player->spritescale,
 				circle->getContentSize().width / 2* CIRCLESCALE))
 			{
 				player->spritescale = sqrt(player->spritescale*player->spritescale + CIRCLESCALE*CIRCLESCALE);
-				player->runAction(ScaleTo::create(0.5,player->spritescale / backgroundscale));
+				player->runAction(ScaleTo::create(0.5,player->spritescale / DEFAULTBGSCALE));
 				circle->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
 					, CCRANDOM_0_1()*bg->getContentSize().height));
 			}
 	}
 }
 
-void GameControler::move(Node* bg, float x, float y,const float backgroundscale, float r)
+void GameControler::move(Node* bg,  float x, float y,const float backgroundscale)
 {
 	//move_x,move_y表示事实上要移动的距离参量
-	float move_x = x;
-	float move_y = y;
+	float move_bgx = x;
+	float move_bgy = y;
+	//定义平均小球放缩参数以作为背景移动的参数
+	float averscale = 0;
+	//移动玩家的小球
 	for (auto player : players->playervector)
 	{
+		float r = sqrt(player->x*player->x + player->y*player->y);
+		float move_x = player->x;
+		float move_y = player->y;
+		averscale += player->spritescale;
 		//玩家的相对坐标
 		Vec2 point = player->getPosition();
 		//判断边界情况
 		if (
-			(point.x <= 0 && x < 0)
-			|| (point.x >= bg->getContentSize().width&&x > 0)
+			(point.x <= 0 && player->x < 0)
+			|| (point.x >= bg->getContentSize().width&&player->x > 0)
 			)
+		{
 			move_x = 0;
+			move_bgx = 0;
+		}
 		if (
-			(point.y <= 0 && y < 0)
-			|| (point.y >= bg->getContentSize().height&&y > 0)
+			(point.y <= 0 && player->y < 0)
+			|| (point.y >= bg->getContentSize().height&&player->y > 0)
 			)
+		{
 			move_y = 0;
+			move_bgy = 0;
+		}
 		if (move_x != 0 || move_y != 0) {
-			player->setPosition(point + Vec2(move_x / r, move_y / r) / backgroundscale);  //需除去放缩的比例
+			player->setPosition(point + (SPEEDPARAMETER - 2 * player->spritescale)*Vec2(move_x / r, move_y / r) / backgroundscale);  //需除去放缩的比例
 		}
 	}
-	bg->setPosition(bg->getPosition() - Vec2(move_x / r, move_y / r));
+	averscale = averscale / players->playervector.size();
+
+	//移动背景和屏幕中心
+	float r = sqrt(x*x + y*y);
+	if (move_bgx != 0 || move_bgy != 0)
+		bg->setPosition(bg->getPosition() - (SPEEDPARAMETER - 2 * averscale)*Vec2(move_bgx / r, move_bgy / r));
 }
 
-void GameControler::divide(Node* bg, float x, float y, const float backgroundscale, float r)
+void GameControler::divide(Node* bg,float& backgroundscale)
 {
+	bool ifdivide = false;
 	int size = players->playervector.size();
-	for (int i = 0; i < size; i++)
+	if (size < 21)
 	{
-		Player* player = *(players->playervector.begin() + i);
-		if (player->spritescale > 3 * CIRCLESCALE) {
+		for (int i = 0; i < size; i++)
+		{
+			Player* player = *(players->playervector.begin() + i);
+			//一定大小的方可进行分裂
+			if (player->spritescale > 2 * STARTPLSCALE) {
 
-			//尺寸缩小至一半
-			player->spritescale = player->spritescale / 2;
-			player->runAction(ScaleTo::create(0.5, player->spritescale / backgroundscale));
-			auto _player = player->playerclone();
-			bg->addChild(_player, 2);
-			FiniteTimeAction* action1 = (FiniteTimeAction *)MoveBy::create(0.5, 15 * Vec2(x / r, y / r));
-			FiniteTimeAction* action2 = (FiniteTimeAction*)ScaleTo::create(0.5, _player->spritescale / backgroundscale);
-			ActionInterval* action = Spawn::create(action1, action2, NULL);
+				float r = sqrt(player->x*player->x + player->y*player->y);
+				//尺寸缩小至一半
+				player->spritescale = player->spritescale / 2;
+				player->runAction(ScaleTo::create(0.5, player->spritescale / DEFAULTBGSCALE));
+				auto _player = player->playerclone();
+				bg->addChild(_player, 2);
+				//分裂后两小球拉开距离,设置动画
+				FiniteTimeAction* action1 = (FiniteTimeAction *)MoveBy::create(0.3, 13 * Vec2(_player->x / r, _player->y / r));
+				FiniteTimeAction* action2 = (FiniteTimeAction*)ScaleTo::create(0.5, _player->spritescale / DEFAULTBGSCALE);
+				ActionInterval* action = Spawn::create(action1, action2, NULL);
 
-			_player->runAction(EaseOut::create(action, 2));
-			players->playervector.pushBack(_player);
+				player->runAction(MoveBy::create(0.3, -6 * Vec2(player->x / r, player->y / r)));
+				_player->runAction(EaseOut::create(action, 2));
+				players->playervector.pushBack(_player);
+				ifdivide = true;
+			}
 		}
+	}
+	if (ifdivide)
+	{
+		scalebg(bg, backgroundscale, 0.2); //放缩屏幕
+	}
+}
+
+void GameControler::scalebg(Node* bg, float& backgroundscale, float scaleparameter)
+{
+	float _backgroundscale = backgroundscale - scaleparameter;;
+	//限定放缩范围
+	if (_backgroundscale >= 2.1 && _backgroundscale <= 5.9)
+	{
+		backgroundscale = backgroundscale - scaleparameter;
+		auto visibleSize = Director::getInstance()->getVisibleSize();
+		Vec2 origin = Director::getInstance()->getVisibleOrigin();
+		auto center = bg->convertToNodeSpace(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
+		Vec2 point = bg->getContentSize() / 2;
+
+		FiniteTimeAction* action1 = //放缩后进行位移补偿
+			(FiniteTimeAction *)MoveBy::create(1/30, scaleparameter * Vec2(center.x - point.x, center.y - point.y));
+		FiniteTimeAction* action2 = (FiniteTimeAction*)ScaleTo::create(1/30, backgroundscale);
+		ActionInterval* action = Spawn::create(action1, action2, NULL);
+		bg->runAction(action);
 	}
 }
