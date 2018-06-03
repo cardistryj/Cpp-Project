@@ -41,6 +41,7 @@ void GameScene::onEnter()
 {
 	Scene::onEnter();
 	log("GameScene onEnter");
+	
 	//使用鼠标操作
 	auto listenerMouse = EventListenerMouse::create();
 	
@@ -72,9 +73,7 @@ void GameScene::onEnter()
 	listenerMouse->onMouseDown = [&](Event *event) {
 		EventMouse* e = (EventMouse*)event;
 		auto bg = this->getChildByTag(bgTag);
-		
 		gamecontroler.divide(bg, backgroundscale);
-
 	};
 	
 	//使用鼠标滚轮进行放缩屏幕
@@ -86,19 +85,67 @@ void GameScene::onEnter()
 		else
 			gamecontroler.scalebg(bg, backgroundscale, 0.2);
 	};
-
-    /*
-	auto listenerKeyboard = EventListenerKeyboard::create();
 	
+   /* 
+	auto listenerKeyboard = EventListenerKeyboard::create();
 	listenerKeyboard->onKeyPressed = [&](EventKeyboard::KeyCode keycode, Event *event) {
-		EventKeyboard* e = (EventKeyboard*)event;
-		if (keycode == EventKeyboard::KeyCode::KEY_BACKSPACE)
-		{
-			auto bg = this->getChildByTag(bgTag);
+		auto visibleSize = Director::getInstance()->getVisibleSize();
+		Vec2 origin = Director::getInstance()->getVisibleOrigin();
+		auto bg = this->getChildByTag(bgTag);
+		switch (keycode) {
+		case EventKeyboard::KeyCode::KEY_SPACE:
 			gamecontroler.divide(bg, backgroundscale);
+			break;
+		case EventKeyboard::KeyCode::KEY_W:
+			y++;
+			break;
+		case EventKeyboard::KeyCode::KEY_S:
+			y--;
+			break;
+		case EventKeyboard::KeyCode::KEY_A:
+			x--;
+			break;
+		case EventKeyboard::KeyCode::KEY_D:
+			x++;
+			break;
+		default:
+			break;
+		}
+		x = (x > 1) ? 1 : x;
+		x = (x < -1) ? -1 : x;
+		y = (y > 1) ? 1 : y;
+		y = (y < -1) ? -1 : y;
+		auto center = bg->convertToNodeSpace(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
+		auto eventpoint = center + 40 * Vec2(x, y);
+		for (auto player : players.playervector)
+		{
+			player->x = eventpoint.x - player->getPosition().x;
+			player->y = eventpoint.y - player->getPosition().y;
+		}
+		if (x != 0 || y != 0)
+			this->scheduleUpdate();
+	};
+	listenerKeyboard->onKeyReleased = [&](EventKeyboard::KeyCode keycode, Event *event) {
+		if (keycode == EventKeyboard::KeyCode::KEY_W)
+			y--;
+		if (keycode == EventKeyboard::KeyCode::KEY_S)
+			y++;
+		if (keycode == EventKeyboard::KeyCode::KEY_A)
+			x++;
+		if (keycode == EventKeyboard::KeyCode::KEY_D)
+			x--;
+		auto visibleSize = Director::getInstance()->getVisibleSize();
+		Vec2 origin = Director::getInstance()->getVisibleOrigin();
+		auto bg = this->getChildByTag(bgTag);
+		auto center = bg->convertToNodeSpace(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
+		auto eventpoint = center + 40 * Vec2(x, y);
+		for (auto player : players.playervector)
+		{
+			player->x = eventpoint.x - player->getPosition().x;
+			player->y = eventpoint.y - player->getPosition().y;
 		}
 	};*/
-	
+
 
 	//注册监听器
 	EventDispatcher* eventDispatcher = Director::getInstance()->getEventDispatcher();
@@ -119,8 +166,14 @@ void GameScene::update(float dt)	//使用update函数移动背景
 {
 	auto bg = this->getChildByTag(bgTag);
 	gamecontroler.move(bg, x, y, backgroundscale);
-
 	gamecontroler.eat(bg);
+	gamecontroler.combine(bg);
+}
+
+void GameScene::OnCallFuncN(Node *pSender)
+{
+	auto bg = this->getChildByTag(bgTag);
+	gamecontroler.combine(bg);
 }
 
 void GameScene::menuReturnCallback(cocos2d::Ref* pSender)

@@ -11,6 +11,8 @@ class GameScene : public cocos2d::Scene
 	float backgroundscale = DEFAULTBGSCALE;
 	//背景标签
 	int bgTag = 111;
+	//是否分裂标签
+	bool ifdivide = false;
 
 	//关于移动背景和屏幕中心的三个参数
 	float x = 0;
@@ -29,6 +31,7 @@ public:
 
 	// a selector callback
 	void menuReturnCallback(cocos2d::Ref* pSender);
+	void OnCallFuncN(cocos2d::Node *pSender);
 
 	// implement the "static create()" method manually
 	CREATE_FUNC(GameScene);

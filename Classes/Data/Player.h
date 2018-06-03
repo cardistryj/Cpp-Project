@@ -8,6 +8,7 @@ class Player:public cocos2d::Sprite
 	float x = 0;
 	float y = 0;
 	float spritescale = STARTPLSCALE;
+	bool onbg = false;//判断小球是否还在bg上
 
 	Player* playerclone(void);
 public:

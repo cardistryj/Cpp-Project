@@ -38,10 +38,13 @@ Player* Player::playerclone(void)
 	auto _player = Player::create();
 	_player->setScale(getScale());
 	_player->setColor(getColor());
-	_player->setPosition(getPosition());
 	_player->spritescale = spritescale;
 	_player->x = x;
 	_player->y = y;
+	auto r = sqrt(x*x + y*y);
+	_player->setPosition(getPosition() + Vec2(x/r, y/r)*getContentSize().width/1.9*spritescale);
+	_player->onbg = onbg;
+
 
 	return _player;
 }

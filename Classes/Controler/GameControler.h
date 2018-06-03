@@ -14,9 +14,10 @@ class GameControler
 		return (((position.x*position.x + position.y*position.y )< (r1 - r2)*(r1 - r2))&&r1>r2);
 	}
 	void eat(cocos2d::Node*);  //吞噬操作
-	void move(cocos2d::Node*, float,float, const float);   //移动小球及背景（待完善）
-	void divide(cocos2d::Node*,float&);  //分裂操作
+	void move(cocos2d::Node*, float,float, const float);   //移动小球及背景
+	bool divide(cocos2d::Node*,float&);  //分裂操作
 	void scalebg(cocos2d::Node*, float&, float); //放缩背景
+	void combine(cocos2d::Node*);  //玩家小球之间的合并
 public:
 	friend class GameScene;
 
