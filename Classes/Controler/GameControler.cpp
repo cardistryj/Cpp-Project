@@ -20,8 +20,17 @@ void GameControler::eat(Node* bg)
 	}
 }
 
-void GameControler::move(Node* bg,  float x, float y,const float backgroundscale)
+void GameControler::move(Node* bg,const float backgroundscale,float &event_x,float &event_y)
 {
+	auto visibleSize = Director::getInstance()->getVisibleSize();
+	Vec2 origin = Director::getInstance()->getVisibleOrigin();
+
+	auto center = bg->convertToNodeSpace(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
+
+	//存储背景和屏幕中心的移动参量
+	float x = event_x - center.x;
+	float y = event_y - center.y;
+
 	//move_x,move_y表示事实上要移动的距离参量
 	float move_bgx = x;
 	float move_bgy = y;
@@ -30,12 +39,17 @@ void GameControler::move(Node* bg,  float x, float y,const float backgroundscale
 	//移动玩家的小球
 	for (auto player : players->playervector)
 	{
+		//玩家的相对坐标
+		Vec2 point = player->getPosition();
+		//存储每个玩家小球的移动参量
+		player->x = event_x - point.x;
+		player->y = event_y - point.y;
+
 		float r = sqrt(player->x*player->x + player->y*player->y);
 		float move_x = player->x;
 		float move_y = player->y;
 		averscale += player->spritescale;
-		//玩家的相对坐标
-		Vec2 point = player->getPosition();
+
 		//判断边界情况
 		if (
 			(point.x <= 0 && player->x < 0)
@@ -54,19 +68,24 @@ void GameControler::move(Node* bg,  float x, float y,const float backgroundscale
 			move_bgy = 0;
 		}
 		if (move_x != 0 || move_y != 0) {
-			player->setPosition(point + backgroundscale / 4 *(SPEEDPARAMETER - 2 * player->spritescale)*Vec2(move_x / r, move_y / r) / backgroundscale);  //需除去放缩的比例
+			player->setPosition(point + backgroundscale /4 * (SPEEDPARAMETER - 2 * player->spritescale)*Vec2(move_x / r, move_y / r)/ backgroundscale);  //需除去放缩的比例
 		}
 	}
 	averscale = averscale / players->playervector.size();
 
 	//移动背景和屏幕中心
 	float r = sqrt(x*x + y*y);
-	if (move_bgx != 0 || move_bgy != 0)
-		bg->setPosition(bg->getPosition() - backgroundscale / 4* (SPEEDPARAMETER - 2 * averscale)*Vec2(move_bgx / r, move_bgy / r));
+	if ((move_bgx != 0 || move_bgy != 0))
+	{
+		bg->setPosition(bg->getPosition() - backgroundscale / 4 * (SPEEDPARAMETER - 2 * averscale)*Vec2(move_bgx / r, move_bgy / r));
+		event_x =event_x + backgroundscale / 4 * (SPEEDPARAMETER - 2 * averscale)*Vec2(move_bgx / r, move_bgy / r).x/ backgroundscale;
+		event_y = event_y + backgroundscale / 4 * (SPEEDPARAMETER - 2 * averscale)*Vec2(move_bgx / r, move_bgy / r).y/ backgroundscale;
+	}
 }
 
-bool GameControler::divide(Node* bg,float& backgroundscale)
+void GameControler::divide(Node* bg,float& backgroundscale)
 {
+	//判断是否进行了分裂操作
 	bool ifdivide = false;
 	int size = players->playervector.size();
 	if (size < 21)
@@ -81,6 +100,7 @@ bool GameControler::divide(Node* bg,float& backgroundscale)
 				//尺寸缩小至一半
 				player->spritescale = player->spritescale / sqrt(2);
 				player->runAction(ScaleTo::create(0.5, player->spritescale / DEFAULTBGSCALE));
+				//克隆小球
 				auto _player = player->playerclone();
 				bg->addChild(_player, 2);
 				//分裂后两小球拉开距离,设置动画
@@ -97,10 +117,7 @@ bool GameControler::divide(Node* bg,float& backgroundscale)
 		}
 	}
 	if (ifdivide)
-	{
 		scalebg(bg, backgroundscale, 0.2); //放缩屏幕
-	}
-	return ifdivide;
 }
 
 void GameControler::scalebg(Node* bg, float& backgroundscale, float scaleparameter)
@@ -123,15 +140,15 @@ void GameControler::scalebg(Node* bg, float& backgroundscale, float scaleparamet
 	}
 }
 
-void GameControler::combine(Node*bg)
+void GameControler::combine(Node*bg,float& backgroundscale)
 {
-	auto visibleSize = Director::getInstance()->getVisibleSize();
-	Vec2 origin = Director::getInstance()->getVisibleOrigin();
-	auto center = bg->convertToNodeSpace(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
+	//定义存储将要删除的小球的容器
 	Vector<Player*> toerase;
+	//判断是否进行合并操作
+	bool ifcombine = false;
 	for (auto player1 : players->playervector)
 	{
-		for (auto player2:players->playervector)
+		for (auto player2 : players->playervector)
 		{
 			if (player1 != player2&&player1->onbg&&player2->onbg)
 			{
@@ -143,13 +160,17 @@ void GameControler::combine(Node*bg)
 					//处理被合并掉的小球
 					player2->onbg = false;
 					toerase.pushBack(player2);
+					ifcombine = true;
 				}
 			}
 		}
 	}
+	//删除小球
 	for (auto player_toerase : toerase)
 	{
 		bg->removeChild(player_toerase);
 		players->playervector.eraseObject(player_toerase);
 	}
+	if (ifcombine)
+		scalebg(bg, backgroundscale, -0.2); //放缩屏幕
 }

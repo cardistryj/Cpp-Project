@@ -42,7 +42,8 @@ Player* Player::playerclone(void)
 	_player->x = x;
 	_player->y = y;
 	auto r = sqrt(x*x + y*y);
-	_player->setPosition(getPosition() + Vec2(x/r, y/r)*getContentSize().width/1.9*spritescale);
+	//设置克隆小球的坐标稍微偏离原始小球坐标
+	_player->setPosition(getPosition() + Vec2(x/r, y/r)*getContentSize().width/2*spritescale);
 	_player->onbg = onbg;
 
 

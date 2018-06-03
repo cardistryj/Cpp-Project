@@ -14,9 +14,9 @@ class GameScene : public cocos2d::Scene
 	//是否分裂标签
 	bool ifdivide = false;
 
-	//关于移动背景和屏幕中心的三个参数
-	float x = 0;
-	float y = 0;
+    //定义鼠标事件坐标
+	float event_x = 0;
+	float event_y = 0;
 
 	Circles  circles;
 	PlayerVector players;
@@ -31,7 +31,6 @@ public:
 
 	// a selector callback
 	void menuReturnCallback(cocos2d::Ref* pSender);
-	void OnCallFuncN(cocos2d::Node *pSender);
 
 	// implement the "static create()" method manually
 	CREATE_FUNC(GameScene);

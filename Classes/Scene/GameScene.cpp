@@ -41,6 +41,13 @@ void GameScene::onEnter()
 {
 	Scene::onEnter();
 	log("GameScene onEnter");
+	//初始化默认鼠标事件坐标为屏幕中心以防止未定义情况
+	auto visibleSize = Director::getInstance()->getVisibleSize();
+	Vec2 origin = Director::getInstance()->getVisibleOrigin();
+	auto bg = this->getChildByTag(bgTag);
+	auto center = bg->convertToNodeSpace(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
+	event_x = center.x;
+	event_y = center.y;
 	
 	//使用鼠标操作
 	auto listenerMouse = EventListenerMouse::create();
@@ -50,30 +57,10 @@ void GameScene::onEnter()
 		auto bg = this->getChildByTag(bgTag);
 		//得到事件对背景的模型坐标
 		auto eventpoint = bg->convertToNodeSpace(Vec2(e->getCursorX(), e->getCursorY()));
-		//存储每个玩家小球的移动参量
-		for (auto player : players.playervector)
-		{
-			player->x = eventpoint.x - player->getPosition().x;
-			player->y = eventpoint.y - player->getPosition().y;
-		}
-		auto visibleSize = Director::getInstance()->getVisibleSize();
-		Vec2 origin = Director::getInstance()->getVisibleOrigin();
+		event_x = eventpoint.x;
+		event_y = eventpoint.y;
 
-		auto center = bg->convertToNodeSpace(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
 
-		//存储背景和屏幕中心的移动参量
-		x = eventpoint.x - center.x,
-		y = eventpoint.y - center.y;
-
-		if (x != 0 || y != 0)
-			this->scheduleUpdate();
-	};
-	
-	//单击鼠标进行分裂
-	listenerMouse->onMouseDown = [&](Event *event) {
-		EventMouse* e = (EventMouse*)event;
-		auto bg = this->getChildByTag(bgTag);
-		gamecontroler.divide(bg, backgroundscale);
 	};
 	
 	//使用鼠标滚轮进行放缩屏幕
@@ -86,7 +73,7 @@ void GameScene::onEnter()
 			gamecontroler.scalebg(bg, backgroundscale, 0.2);
 	};
 	
-   /* 
+   
 	auto listenerKeyboard = EventListenerKeyboard::create();
 	listenerKeyboard->onKeyPressed = [&](EventKeyboard::KeyCode keycode, Event *event) {
 		auto visibleSize = Director::getInstance()->getVisibleSize();
@@ -96,84 +83,31 @@ void GameScene::onEnter()
 		case EventKeyboard::KeyCode::KEY_SPACE:
 			gamecontroler.divide(bg, backgroundscale);
 			break;
-		case EventKeyboard::KeyCode::KEY_W:
-			y++;
-			break;
-		case EventKeyboard::KeyCode::KEY_S:
-			y--;
-			break;
-		case EventKeyboard::KeyCode::KEY_A:
-			x--;
-			break;
-		case EventKeyboard::KeyCode::KEY_D:
-			x++;
-			break;
-		default:
-			break;
 		}
-		x = (x > 1) ? 1 : x;
-		x = (x < -1) ? -1 : x;
-		y = (y > 1) ? 1 : y;
-		y = (y < -1) ? -1 : y;
-		auto center = bg->convertToNodeSpace(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
-		auto eventpoint = center + 40 * Vec2(x, y);
-		for (auto player : players.playervector)
-		{
-			player->x = eventpoint.x - player->getPosition().x;
-			player->y = eventpoint.y - player->getPosition().y;
-		}
-		if (x != 0 || y != 0)
-			this->scheduleUpdate();
 	};
-	listenerKeyboard->onKeyReleased = [&](EventKeyboard::KeyCode keycode, Event *event) {
-		if (keycode == EventKeyboard::KeyCode::KEY_W)
-			y--;
-		if (keycode == EventKeyboard::KeyCode::KEY_S)
-			y++;
-		if (keycode == EventKeyboard::KeyCode::KEY_A)
-			x++;
-		if (keycode == EventKeyboard::KeyCode::KEY_D)
-			x--;
-		auto visibleSize = Director::getInstance()->getVisibleSize();
-		Vec2 origin = Director::getInstance()->getVisibleOrigin();
-		auto bg = this->getChildByTag(bgTag);
-		auto center = bg->convertToNodeSpace(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
-		auto eventpoint = center + 40 * Vec2(x, y);
-		for (auto player : players.playervector)
-		{
-			player->x = eventpoint.x - player->getPosition().x;
-			player->y = eventpoint.y - player->getPosition().y;
-		}
-	};*/
 
 
 	//注册监听器
 	EventDispatcher* eventDispatcher = Director::getInstance()->getEventDispatcher();
 	eventDispatcher->addEventListenerWithSceneGraphPriority(listenerMouse, this->getChildByTag(bgTag));
-    //eventDispatcher->addEventListenerWithSceneGraphPriority(listenerKeyboard, this->getChildByTag(bgTag));
-	
+    eventDispatcher->addEventListenerWithSceneGraphPriority(listenerKeyboard, this->getChildByTag(bgTag));
+	this->scheduleUpdate();
 }
 
 void GameScene::onExit()
 {
 	Scene::onExit();
 	log("GameScene onExit");
-	//unscheduleUpdate();
+	unscheduleUpdate();
 	Director::getInstance()->getEventDispatcher()->removeAllEventListeners();
 }
 
 void GameScene::update(float dt)	//使用update函数移动背景
 {
 	auto bg = this->getChildByTag(bgTag);
-	gamecontroler.move(bg, x, y, backgroundscale);
+	gamecontroler.move(bg,backgroundscale,event_x,event_y);
 	gamecontroler.eat(bg);
-	gamecontroler.combine(bg);
-}
-
-void GameScene::OnCallFuncN(Node *pSender)
-{
-	auto bg = this->getChildByTag(bgTag);
-	gamecontroler.combine(bg);
+	gamecontroler.combine(bg,backgroundscale);
 }
 
 void GameScene::menuReturnCallback(cocos2d::Ref* pSender)
