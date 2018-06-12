@@ -1,26 +1,22 @@
 #pragma once
 #include "cocos2d.h"
-#include"Circles.h"
-#include"PlayerVector.h"
 #include"GameControler.h"
+
+//枚举标签类型
+typedef enum
+{
+	bgTag = 110
+	, controlerTag
+	, playersTag
+	, circlesTag
+}Tag;
 
 class GameScene : public cocos2d::Scene
 {
-
-	//背景放缩比例
-	float backgroundscale = DEFAULTBGSCALE;
-	//背景标签
-	int bgTag = 111;
-	//是否分裂标签
-	bool ifdivide = false;
-
     //定义鼠标事件坐标
 	float event_x = 0;
 	float event_y = 0;
 
-	Circles  circles;
-	PlayerVector players;
-	GameControler gamecontroler;
 public:
 
 	static cocos2d::Scene* createScene();

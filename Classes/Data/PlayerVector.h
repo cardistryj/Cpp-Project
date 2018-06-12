@@ -1,14 +1,17 @@
 #pragma once
 #include "cocos2d.h"
 #include"Player.h"
+#include"BackGround.h"
 
-class PlayerVector
+#define MAXPLAYERNUMBER 21
+
+class PlayerVector:public cocos2d::Node
 {
 	cocos2d::Vector<Player*> playervector;
 public:
-	friend class GameScene;
 	friend class GameControler;
 
-	bool init_on(cocos2d::Sprite*, float);
-	//后续分裂小球的添加函数
+	inline bool init();
+	static PlayerVector* create();
+	bool init_on(BackGround*);
 };

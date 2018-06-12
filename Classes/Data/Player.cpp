@@ -46,6 +46,5 @@ Player* Player::playerclone(void)
 	_player->setPosition(getPosition() + Vec2(x/r, y/r)*getContentSize().width/2*spritescale);
 	_player->onbg = onbg;
 
-
 	return _player;
 }
