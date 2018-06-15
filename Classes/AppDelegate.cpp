@@ -63,7 +63,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
 #else
         glview = GLViewImpl::create("MyCppGame");
 #endif
-		glview->setFrameSize(1024,720);
+		glview->setFrameSize(1280,960);
         director->setOpenGLView(glview);
     }
 

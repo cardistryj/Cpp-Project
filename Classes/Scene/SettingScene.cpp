@@ -5,14 +5,17 @@ USING_NS_CC;
 
 Scene* SettingScene::createScene()
 {
-	return SettingScene::create();
+	auto scene = Scene::create();
+	auto layer = SettingScene::create();
+	scene->addChild(layer);
+	return scene;
 }
 
 bool SettingScene::init()
 {
 	//////////////////////////////
 	// 1. super init first
-	if (!Scene::init())
+	if (!Layer::init())
 	{
 		return false;
 	}
@@ -46,9 +49,9 @@ bool SettingScene::init()
 	
 
 	//ok button
-	auto okMenuItem = MenuItemImage::create("menu/ok-down.png", "menu/ok-up.png",
+	auto okMenuItem = MenuItemImage::create("CloseNormal.png", "CloseSelected.png",
 		CC_CALLBACK_1(SettingScene::menuOkCallback,this));
-	okMenuItem->setPosition(Vec2(origin.x + visibleSize.width, origin.y + 200));
+	okMenuItem->setPosition(Vec2(origin.x + visibleSize.width/2, origin.y + 200));
 
 	auto mn = Menu::create(soundToggleMenuItem, musicToggleMenuItem, okMenuItem, NULL);
 	mn->setPosition(Vec2::ZERO);
@@ -70,5 +73,5 @@ void SettingScene::menuMusicToggleCallback(cocos2d::Ref* pSender)
 
 void SettingScene::menuOkCallback(cocos2d::Ref* pSender)
 {
-	Director::getInstance()->popScene();
+	Director::getInstance()->popSceneWithTransition<TransitionSlideInL>(1.0);
 }

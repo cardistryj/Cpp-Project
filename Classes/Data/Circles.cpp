@@ -50,6 +50,7 @@ void Circles::addcirclesto(BackGround* bg)
 		sprite->setScale(CIRCLESCALE / bg->get_scale());
 		sprite->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
 			, CCRANDOM_0_1()*bg->getContentSize().height));
+		
 		bg->addChild(sprite, 1);  //添加至背景节点便于整体的放缩
 	}
 }

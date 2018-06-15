@@ -7,7 +7,10 @@ USING_NS_CC;
 
 Scene* HelloWorld::createScene()
 {
-    return HelloWorld::create();
+	auto scene = Scene::create();
+	auto layer = HelloWorld::create();
+	scene->addChild(layer);
+    return scene;
 }
 
 // Print useful error message instead of segfaulting when files are not there.
@@ -22,7 +25,7 @@ bool HelloWorld::init()
 {
     //////////////////////////////
     // 1. super init first
-    if ( !Scene::init() )
+    if ( !Layer::init() )
     {
         return false;
     }
@@ -122,15 +125,15 @@ bool HelloWorld::init()
 void HelloWorld::menuStartCallback(Ref* pSender)
 {
 	auto sc = GameScene::createScene();
-	auto reScene = TransitionCrossFade::create(1.0f, sc);
-	Director::getInstance()->pushScene(reScene);
+	auto reScene = TransitionCrossFade::create(2.0f, sc);
+	Director::getInstance()->replaceScene(reScene);
 }
 
 //进入设置场景
 void HelloWorld::menuSettingCallback(Ref* pSender)
 {
 	auto sc = SettingScene::createScene();
-	auto reScene = TransitionCrossFade::create(1.0f, sc);
+	auto reScene = TransitionSlideInR::create(1.0f, sc);
 	Director::getInstance()->pushScene(reScene);
 }
 
@@ -143,6 +146,7 @@ void HelloWorld::menuHelpCallback(Ref* pSender)
 void HelloWorld::menuExitCallback(Ref* pSender)
 {
     //Close the cocos2d-x game scene and quit the application
+	Director::getInstance()->getEventDispatcher()->removeAllEventListeners();
     Director::getInstance()->end();
 
     #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)

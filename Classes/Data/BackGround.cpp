@@ -15,6 +15,8 @@ BackGround* BackGround::create()
 	BackGround* bg = new BackGround();
 	if (bg->init())
 	{
+
+
 		bg->autorelease();
 	}
 	else

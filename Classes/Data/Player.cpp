@@ -39,11 +39,16 @@ Player* Player::playerclone(void)
 	_player->setScale(getScale());
 	_player->setColor(getColor());
 	_player->spritescale = spritescale;
+	_player->setTag(getTag());
 	_player->x = x;
 	_player->y = y;
 	auto r = sqrt(x*x + y*y);
+	//添加刚体
+	auto body = PhysicsBody::createCircle(_player->getContentSize().width / 2);
+	_player->setPhysicsBody(body);
+
 	//设置克隆小球的坐标稍微偏离原始小球坐标
-	_player->setPosition(getPosition() + Vec2(x/r, y/r)*getContentSize().width/2*spritescale);
+	_player->setPosition(getPosition()+ Vec2(x/r, y/r)*getContentSize().width/2*spritescale);
 	_player->onbg = onbg;
 
 	return _player;

@@ -1,7 +1,7 @@
 #pragma once
 #include "cocos2d.h"
 
-class SettingScene : public cocos2d::Scene
+class SettingScene : public cocos2d::Layer
 {
 public:
 	static cocos2d::Scene* createScene();
