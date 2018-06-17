@@ -125,7 +125,7 @@ bool HelloWorld::init()
 void HelloWorld::menuStartCallback(Ref* pSender)
 {
 	auto sc = GameScene::createScene();
-	auto reScene = TransitionCrossFade::create(2.0f, sc);
+	auto reScene = TransitionRotoZoom::create(2.0f, sc);
 	Director::getInstance()->replaceScene(reScene);
 }
 
@@ -133,7 +133,7 @@ void HelloWorld::menuStartCallback(Ref* pSender)
 void HelloWorld::menuSettingCallback(Ref* pSender)
 {
 	auto sc = SettingScene::createScene();
-	auto reScene = TransitionSlideInR::create(1.0f, sc);
+	auto reScene = TransitionFadeTR::create(1.0f, sc);
 	Director::getInstance()->pushScene(reScene);
 }
 

@@ -3,7 +3,7 @@
 #include"BackGround.h"
 //用于在屏幕上生成小球
 //定义最大小球数量
-#define MAXCIRCLENUMBER 300
+#define MAXCIRCLENUMBER 250
 //定义小球尺寸
 #define CIRCLESCALE 0.02
 

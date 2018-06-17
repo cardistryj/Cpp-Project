@@ -89,10 +89,13 @@ void GameScene::onEnter()
 	listenerMouse->onMouseScroll = [&](Event *event) {
 		EventMouse* e = (EventMouse*)event;
 		auto gamecontroler = (GameControler*)this->getChildByTag(controlerTag);
-		if (e->getScrollY()<0)
-			gamecontroler->scalebg(-0.2);
-		else
-			gamecontroler->scalebg(0.2);
+		if (!ifPause)
+		{
+			if (e->getScrollY()<0)
+				gamecontroler->scalebg(-0.2);
+			else
+				gamecontroler->scalebg(0.2);
+		}
 	};
 
 	auto listenerKeyboard = EventListenerKeyboard::create();
@@ -101,27 +104,31 @@ void GameScene::onEnter()
 		auto gamecontroler = (GameControler*)getChildByTag(controlerTag);
 		auto players = (PlayerVector*)getChildByTag(playersTag);
 		auto bg = (BackGround*)getChildByTag(bgTag);
-		switch (keycode) {
-		case EventKeyboard::KeyCode::KEY_ESCAPE:
-			if (!ifPause)
-			{
+		if (!ifPause) {
+			switch (keycode) {
+			case EventKeyboard::KeyCode::KEY_ESCAPE:
 				pause();
-				bg->runAction(FadeTo::create(0.5, 80));
-			}
-			ifPause = true;
-			unscheduleUpdate();
-			break;
-		case  EventKeyboard::KeyCode::KEY_SPACE:
-			if (!ifPause)
+				ifPause = true;
+				unscheduleUpdate();
+				break;
+			case  EventKeyboard::KeyCode::KEY_SPACE:
 				gamecontroler->divide(players);
-			break;
-		default:
-			break;
+				break;
+			case EventKeyboard::KeyCode::KEY_UP_ARROW:
+				gamecontroler->scalebg(-0.2);
+				break;
+			case EventKeyboard::KeyCode::KEY_DOWN_ARROW:
+				gamecontroler->scalebg(0.2);
+				break;
+			default:
+				break;
+			}
 		}
 	};
 
 	EventDispatcher* eventDispatcher = Director::getInstance()->getEventDispatcher();
-	//第一次进入场景时注册监听器
+	//只在第一次进入场景时注册监听器
+	//避免popscene后造成的一些未定义情况
 	if (ifFirstEnter)
 	{
 		eventDispatcher->addEventListenerWithSceneGraphPriority(listenerMouse, this->getChildByTag(bgTag));
@@ -156,8 +163,10 @@ void GameScene::pause()
 {
 	auto visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
+	auto bg = (BackGround*)getChildByTag(bgTag);
+	bg->runAction(FadeTo::create(0.5, 80));
 
-	//添加菜单
+	//添加暂停菜单
 	auto continuelabel = Label::createWithTTF("Continue", "fonts/Marker Felt.ttf", 24);
 	continuelabel->setColor(Color3B::RED);
 	auto continueItem = MenuItemLabel::create(continuelabel, CC_CALLBACK_1(GameScene::menuContinueCallback, this));
@@ -211,7 +220,7 @@ void GameScene::menuSettingCallback(cocos2d::Ref* pSender)
 {
 	removeChildByTag(pausemenuTag);
 	auto sc = SettingScene::createScene();
-	auto reScene = TransitionSlideInR::create(1.0f, sc);
+	auto reScene = TransitionFadeTR::create(1.0f, sc);
 	Director::getInstance()->pushScene(reScene);
 }
 
@@ -223,6 +232,6 @@ void GameScene::menuHelpCallback(cocos2d::Ref* pSender)
 void GameScene::menuExitCallback(cocos2d::Ref *pSender)
 {
 	auto sc = HelloWorld::createScene();
-	auto reScene = TransitionRotoZoom::create(1.0f, sc);
+	auto reScene = TransitionTurnOffTiles::create(1.0f, sc);
 	Director::getInstance()->replaceScene(reScene);
 }
