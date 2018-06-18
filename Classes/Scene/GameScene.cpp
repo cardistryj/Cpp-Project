@@ -7,6 +7,7 @@ USING_NS_CC;
 Scene* GameScene::createScene()
 {
 	auto scene = Scene::createWithPhysics();
+	//scene->getPhysicsWorld()->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
 	Vect gravity(0, 0.0f);
 	scene->getPhysicsWorld()->setGravity(gravity);
 	auto layer = GameScene::create();
@@ -25,13 +26,18 @@ bool GameScene::init()
 	auto visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
+	//初始化控制器
+	auto gamecontroler = GameControler::create();
+	gamecontroler->setTag(controlerTag);
+	this->addChild(gamecontroler, 1);
+
 	//创建并添加背景
 	auto bg = BackGround::create();
 	bg->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
 	bg->setColor(Color3B(245, 245, 245));
 	bg->setTag(bgTag);
 	bg->setCascadeOpacityEnabled(true);  //便于调整整体透明度
-	this->addChild(bg, 1);
+	gamecontroler->addChild(bg, 1);
 
 	//为背景添加碰撞层
 	auto size = bg->getContentSize();
@@ -40,23 +46,17 @@ bool GameScene::init()
 	auto body = PhysicsBody::createEdgeBox(size, PHYSICSBODY_MATERIAL_DEFAULT, DEFAULTWIDTH);
 	bg->setPhysicsBody(body);
 
-	//创建玩家容器
-	auto players = PlayerVector::create();
-	players->setTag(playersTag);
-	this->addChild(players, 1);
-	//初始化玩家容器
-	players->init_on(bg);
+	auto allplayers = AllPlayersVector::create();
+	allplayers->setTag(allplayersTag);
+	gamecontroler->addChild(allplayers);
+	allplayers->init(bg, MAXPLAYERSNUMBER);
 
 	auto circles = Circles::create();
 	circles->setTag(circlesTag);
-	this->addChild(circles, 1);
-	//在屏幕中添加小球
+	gamecontroler->addChild(circles, 1);
+	//在背景上添加小球
 	circles->addcirclesto(bg);
 
-	//初始化控制器
-	auto gamecontroler = GameControler::create(bg);
-	gamecontroler->setTag(controlerTag);
-	this->addChild(gamecontroler, 1);
 	return true;
 }
 
@@ -67,7 +67,7 @@ void GameScene::onEnter()
 	//初始化默认事件坐标为屏幕中心以防止未定义情况
 	auto visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
-	auto bg = (BackGround*)getChildByTag(bgTag);
+	auto bg = (BackGround*)getChildByTag(controlerTag)->getChildByTag(bgTag);
 	auto center = bg->convertToNodeSpace(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
 
 	event_x = center.x;
@@ -78,7 +78,7 @@ void GameScene::onEnter()
 	
 	listenerMouse->onMouseMove = [&](Event *event) {
 		EventMouse* e = (EventMouse*)event;
-		auto bg = (BackGround*)this->getChildByTag(bgTag);
+		auto bg = (BackGround*)getChildByTag(controlerTag)->getChildByTag(bgTag);
 		//得到事件对背景的模型坐标
 		auto eventpoint = bg->convertToNodeSpace(Vec2(e->getCursorX(), e->getCursorY()));
 		event_x = eventpoint.x;
@@ -88,7 +88,7 @@ void GameScene::onEnter()
 	//使用鼠标滚轮进行放缩屏幕
 	listenerMouse->onMouseScroll = [&](Event *event) {
 		EventMouse* e = (EventMouse*)event;
-		auto gamecontroler = (GameControler*)this->getChildByTag(controlerTag);
+		auto gamecontroler = (GameControler*)getChildByTag(controlerTag);
 		if (!ifPause)
 		{
 			if (e->getScrollY()<0)
@@ -102,8 +102,8 @@ void GameScene::onEnter()
 
 	listenerKeyboard->onKeyPressed = [&](EventKeyboard::KeyCode keycode, Event *event) {
 		auto gamecontroler = (GameControler*)getChildByTag(controlerTag);
-		auto players = (PlayerVector*)getChildByTag(playersTag);
-		auto bg = (BackGround*)getChildByTag(bgTag);
+		auto allplayersvector = (AllPlayersVector*)gamecontroler->getChildByTag(allplayersTag);
+		auto humanplayers = *(allplayersvector->allPlayersVector.begin());
 		if (!ifPause) {
 			switch (keycode) {
 			case EventKeyboard::KeyCode::KEY_ESCAPE:
@@ -112,7 +112,7 @@ void GameScene::onEnter()
 				unscheduleUpdate();
 				break;
 			case  EventKeyboard::KeyCode::KEY_SPACE:
-				gamecontroler->divide(players);
+				gamecontroler->divide(humanplayers);
 				break;
 			case EventKeyboard::KeyCode::KEY_UP_ARROW:
 				gamecontroler->scalebg(-0.2);
@@ -127,12 +127,13 @@ void GameScene::onEnter()
 	};
 
 	EventDispatcher* eventDispatcher = Director::getInstance()->getEventDispatcher();
+
 	//只在第一次进入场景时注册监听器
 	//避免popscene后造成的一些未定义情况
 	if (ifFirstEnter)
 	{
-		eventDispatcher->addEventListenerWithSceneGraphPriority(listenerMouse, this->getChildByTag(bgTag));
-		eventDispatcher->addEventListenerWithSceneGraphPriority(listenerKeyboard, this->getChildByTag(bgTag));
+		eventDispatcher->addEventListenerWithSceneGraphPriority(listenerMouse, bg);
+		eventDispatcher->addEventListenerWithSceneGraphPriority(listenerKeyboard, bg);
 	}
 	ifFirstEnter = false;
 
@@ -151,19 +152,18 @@ void GameScene::onExit()
 void GameScene::update(float dt)	//使用update函数移动背景
 {
 	auto gamecontroler = (GameControler*)getChildByTag(controlerTag);
-	auto circles = (Circles*)getChildByTag(circlesTag);
-	auto players = (PlayerVector*)getChildByTag(playersTag);
 
-	gamecontroler->move(players,event_x,event_y);
-	gamecontroler->eat(circles,players);
-	gamecontroler->combine(players);
+	gamecontroler->move(event_x,event_y);
+	gamecontroler->traverse();
+	gamecontroler->combine();
+	gamecontroler->inter_traverse();
 }
 
 void GameScene::pause()
 {
 	auto visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
-	auto bg = (BackGround*)getChildByTag(bgTag);
+	auto bg = (BackGround*)getChildByTag(controlerTag)->getChildByTag(bgTag);
 	bg->runAction(FadeTo::create(0.5, 80));
 
 	//添加暂停菜单
@@ -204,7 +204,7 @@ void GameScene::menuContinueCallback(cocos2d::Ref *pSender)
 	ifPause = false;
 	removeChildByTag(pausemenuTag);  //移除暂停菜单
 
-	auto bg = (BackGround*)this->getChildByTag(bgTag);
+	auto bg = (BackGround*)getChildByTag(controlerTag)->getChildByTag(bgTag);
 	bg->runAction(FadeTo::create(0.5, 255));
 	scheduleUpdate();
 }

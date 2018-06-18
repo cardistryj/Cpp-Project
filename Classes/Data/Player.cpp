@@ -1,5 +1,5 @@
 #include"Player.h"
-#include"color.h"
+
 USING_NS_CC;
 
 bool Player::init() //添加参数
@@ -8,13 +8,6 @@ bool Player::init() //添加参数
 	{
 		return false;
 	}
-	//随机生成颜色
-	Color color;
-	srand((unsigned)time(NULL));
-	unsigned randomnumber = rand() % 12;
-	unsigned char *c = color.getColor(randomnumber);
-	setColor(Color3B(*c, *(c + 1), *(c + 2)));
-
 	return true;
 }
 

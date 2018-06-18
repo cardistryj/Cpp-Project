@@ -9,8 +9,9 @@ class Player:public cocos2d::Sprite
 	float x = 0;
 	float y = 0;
 	float speed = 0;
+
 	float spritescale = STARTPLSCALE;
-	bool onbg = false;//判断小球是否还在bg上
+	bool onbg = true;//判断小球是否还在bg上
 
 	Player* playerclone(void);
 	virtual bool init();
@@ -19,6 +20,5 @@ public:
 	friend class PlayerVector;
 
 	static Player* create();
-
-	//CREATE_FUNC(MySprite);  
+	//CREATE_FUNC(Player);  
 };

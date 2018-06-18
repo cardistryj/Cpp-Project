@@ -1,5 +1,7 @@
 #include"GameControler.h"
 USING_NS_CC;
+//定义小球速度参数默认值
+#define SPEEDPARAMETER 1.3
 
 bool GameControler::init()
 {
@@ -10,12 +12,11 @@ bool GameControler::init()
 	return true;
 }
 
-GameControler* GameControler::create(BackGround* bg)
+GameControler* GameControler::create()
 {
 	GameControler* gamecontroler = new GameControler();
 	if (gamecontroler->init())
 	{
-		gamecontroler->bg = bg;
 		gamecontroler->autorelease();
 	}
 	else
@@ -27,28 +28,72 @@ GameControler* GameControler::create(BackGround* bg)
 	return gamecontroler;
 }
 
-void GameControler::eat(Circles* circles, PlayerVector* players)
+bool GameControler::if_attack(PlayerVector* players1, PlayerVector* players2)
 {
-	///遍历容器判断是否有吞噬
-	for (auto player : players->playervector)
+	for (auto player1 : players1->playervector)
 	{
-		for (auto circle : circles->spriteVector)
+		for (auto player2 : players2->playervector)
 		{
-			if (isCircleCover(DEFAULTBGSCALE*(player->getPosition() - circle->getPosition()),
-				player->getContentSize().width / 2 * player->spritescale,
-				circle->getContentSize().width / 2 * CIRCLESCALE))
+			if (player1->spritescale / sqrt(2) > player2->spritescale)
 			{
-				player->spritescale = sqrt(player->spritescale*player->spritescale + CIRCLESCALE*CIRCLESCALE);
-				player->runAction(ScaleTo::create(0.5, player->spritescale / DEFAULTBGSCALE));
-				circle->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
-					, CCRANDOM_0_1()*bg->getContentSize().height));
+				players1->desitination = Vec2(player2->getPosition().x// + player2->x
+					, player2->getPosition().y// + player2->y
+				);
+				return true;
 			}
 		}
 	}
+	return false;
 }
 
-void GameControler::move(PlayerVector* players,float &event_x, float &event_y)
+void GameControler::traverse()
 {
+	auto circles = (Circles*)getChildByTag(circlesTag);
+	auto allplayers = (AllPlayersVector*)getChildByTag(allplayersTag);
+
+	///遍历容器
+	for (auto players : allplayers->allPlayersVector)
+	{
+		//判断每个玩家是否进行了吞噬操作的标签
+		bool ifeat = false;
+		for (auto player : players->playervector)
+		{
+			//定义与食物的最小距离
+			float min_distance = 1000;
+			for (auto circle : circles->spriteVector)
+			{
+				//对AI玩家，找到最近的食物(对于玩家容器中的第一个小球而言)
+				if (players->ifAIplayer&&player == *(players->playervector.begin()))
+				{
+					Vec2 distanceVec = player->getPosition() - circle->getPosition();
+					float distance = sqrt(distanceVec.x*distanceVec.x + distanceVec.y*distanceVec.y);
+					if (distance < min_distance)
+					{
+						min_distance = distance;
+						players->closestfood = circle->getPosition();
+					}
+				}
+				if (isCircleCover(DEFAULTBGSCALE*(player->getPosition() - circle->getPosition()),
+					player->getContentSize().width / 2 * player->spritescale,
+					circle->getContentSize().width / 2 * CIRCLESCALE))
+				{
+					eat(player, circle);
+					ifeat = true;
+				}
+			}
+		}
+		//重新计算平均大小
+		if (ifeat)
+			players->set_scale();
+	}
+}
+
+void GameControler::move(float &event_x, float &event_y)
+{
+	auto allplayers = (AllPlayersVector*)getChildByTag(allplayersTag);
+	auto humanplayers = *(allplayers->allPlayersVector.begin());
+	auto bg = (BackGround*)getChildByTag(bgTag);
+
 	auto visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 	auto center = bg->convertToNodeSpace(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
@@ -57,7 +102,8 @@ void GameControler::move(PlayerVector* players,float &event_x, float &event_y)
 	//存储背景和屏幕中心的移动参量
 	float x = event_x - center.x;
 	float y = event_y - center.y;
-	float r = sqrt(x*x + y*y);
+	float r = lenth(x, y);
+
 	//定义背景移动的速度参数
 	float speed = SPEEDPARAMETER;
 
@@ -65,17 +111,18 @@ void GameControler::move(PlayerVector* players,float &event_x, float &event_y)
 	if (r < 16)
 		speed = 0.5 + 0.05*r;
 	//定义平均小球放缩参数以作为背景移动的一个速度参数
-	float averscale = 0;
+	float averscale = humanplayers->aver_scale;
+
 	//移动玩家的小球
-	for (auto player : players->playervector)
+	for (auto player : humanplayers->playervector)
 	{
 		//玩家的相对坐标
 		Vec2 point = player->getPosition();
 		//存储每个玩家小球的移动参量
 		player->x = event_x - point.x;
 		player->y = event_y - point.y;
-		//计算模长
-		float r = sqrt(player->x*player->x + player->y*player->y);
+		float r = lenth(player->x, player->y);
+
 		//处理边界情况
 		if ((player->getPosition().x - player->getContentSize().width / 2 * player->getScale()) < 0 ||
 			(player->getPosition().x + player->getContentSize().width / 2 * player->getScale()) > bg->getContentSize().width)
@@ -89,15 +136,14 @@ void GameControler::move(PlayerVector* players,float &event_x, float &event_y)
 		if (r < 16)
 			player->speed = 0.5 + 0.05*r;
 
-		averscale += player->spritescale;
-
 		if (player->x != 0 || player->y != 0) {
-			player->setPosition(point + backgroundscale / 4 * (player->speed - 2 * player->spritescale)*Vec2(player->x / r, player->y / r) / backgroundscale);  //需除去放缩的比例
+			player->setPosition(point + backgroundscale / 4 * (player->speed - 2 * player->spritescale)*
+				Vec2(player->x / r, player->y / r) / backgroundscale);  //需除去放缩的比例
+
 		}
 	}
-	averscale = averscale / players->playervector.size();
 
-	//移动背景和屏幕中心
+	//移动背景
 	//鼠标几乎处于屏幕中心时则不做移动
 	if ((x != 0 || y != 0) && r > 1)
 	{
@@ -110,6 +156,8 @@ void GameControler::move(PlayerVector* players,float &event_x, float &event_y)
 
 void GameControler::divide(PlayerVector* players)
 {
+	auto bg = (BackGround*)getChildByTag(bgTag);
+
 	//判断是否进行了分裂操作
 	bool ifdivide = false;
 
@@ -146,15 +194,21 @@ void GameControler::divide(PlayerVector* players)
 		}
 	}
 	if (ifdivide)
-		scalebg(0.1); //放缩屏幕
+	{
+		if (!players->ifAIplayer)
+			scalebg(0.1); //放缩屏幕
+		players->set_scale();
+	}
 }
 
 void GameControler::scalebg(const float scaleparameter)
 {
+	auto bg = (BackGround*)getChildByTag(bgTag);
+
 	float& backgroundscale = bg->get_scale();
 
 	//限定放缩范围
-	if (backgroundscale - scaleparameter >= 2.1 && backgroundscale - scaleparameter <= 5.9)
+	if (backgroundscale - scaleparameter >= DEFAULTBGSCALE / 5 && backgroundscale - scaleparameter <= DEFAULTBGSCALE * 3 / 2)
 	{
 		backgroundscale = backgroundscale - scaleparameter;
 		auto visibleSize = Director::getInstance()->getVisibleSize();
@@ -176,47 +230,133 @@ void GameControler::scalebg(const float scaleparameter)
 		size.width += DEFAULTWIDTH / 2 / bg->get_scale()*DEFAULTBGSCALE;
 		size.height += DEFAULTWIDTH / 2 / bg->get_scale()*DEFAULTBGSCALE;
 		auto body = PhysicsBody::createEdgeBox(size, PHYSICSBODY_MATERIAL_DEFAULT, DEFAULTWIDTH);
-		body->setCategoryBitmask(0x03);
-		body->setContactTestBitmask(0x03);
 		bg->setPhysicsBody(body);
 	}
 }
 
-void GameControler::combine(PlayerVector* players)
+void GameControler::combine()
 {
-	//判断是否进行合并操作
-	bool ifcombine = false;
+	auto allplayers = (AllPlayersVector*)getChildByTag(allplayersTag);
+	auto bg = (BackGround*)getChildByTag(bgTag);
 
-	for (auto player1 : players->playervector)
+	//判断是否是人类玩家进行了合并
+	bool ifhumancombine = false;
+
+	for (auto players : allplayers->allPlayersVector)
 	{
-		for (auto player2 : players->playervector)
+		//判断每个玩家是否进行合并操作
+		bool ifcombine = false;
+		for (auto player1 : players->playervector)
 		{
-			//两小球都尚在背景上时判断能否合并
-			if (player1 != player2&&player1->onbg&&player2->onbg)
+			for (auto player2 : players->playervector)
 			{
-				if (isCircleCover(DEFAULTBGSCALE*(player1->getPosition() - player2->getPosition()),
-					player1->getContentSize().width / 2 * player1->spritescale * 2 / 3,
-					-player2->getContentSize().width / 2 * player2->spritescale * 2 / 3) && player1->spritescale > player2->spritescale)
+				//两小球都尚在背景上时判断能否合并
+				if (player1 != player2&&player1->onbg&&player2->onbg)
 				{
-					player1->spritescale = sqrt(player1->spritescale*player1->spritescale + player2->spritescale*player2->spritescale);
-					player1->runAction(ScaleTo::create(0.5, player1->spritescale / DEFAULTBGSCALE));
-					//处理被合并掉的小球
-					player2->onbg = false;
-					toerase.pushBack(player2);
-					ifcombine = true;
+					if (isCircleCover(DEFAULTBGSCALE*(player1->getPosition() - player2->getPosition()),
+						player1->getContentSize().width / 2 * player1->spritescale * 4 / 5,
+						-player2->getContentSize().width / 2 * player2->spritescale * 4 / 5) && player1->spritescale > player2->spritescale)
+					{
+						player1->spritescale = lenth(player1->spritescale, player2->spritescale);
+						player1->runAction(ScaleTo::create(0.5, player1->spritescale / DEFAULTBGSCALE));
+						//处理被合并掉的小球
+						player2->onbg = false;
+						players->toerase.pushBack(player2);
+						if (!players->ifAIplayer)
+							ifhumancombine = true;
+						ifcombine = true;
+					}
 				}
 			}
 		}
+		if (ifcombine)
+			players->set_scale();
 	}
+
 	//删除小球
-	for (auto player_toerase : toerase)
+	for (auto players : allplayers->allPlayersVector)
 	{
-		auto bg1 = (Node*)bg;
-		player_toerase->getPhysicsBody()->removeAllShapes();
-		bg1->removeChild(player_toerase);
-		players->playervector.eraseObject(player_toerase);
+		for (auto player_toerase : players->toerase)
+		{
+			auto bg1 = (Node*)bg;
+			player_toerase->getPhysicsBody()->removeAllShapes();
+			bg1->removeChild(player_toerase);
+			players->playervector.eraseObject(player_toerase);
+		}
+		players->toerase.clear();
 	}
-	toerase.clear();
-	if (ifcombine)
+	if (ifhumancombine)
 		scalebg(-0.1); //放缩屏幕
+}
+
+void GameControler::eat(Player* player, Sprite* circle)
+{
+	auto bg = (BackGround*)getChildByTag(bgTag);
+	player->spritescale = lenth(player->spritescale, CIRCLESCALE);
+	player->runAction(ScaleTo::create(0.5, player->spritescale / DEFAULTBGSCALE));
+	circle->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
+		, CCRANDOM_0_1()*bg->getContentSize().height));
+}
+
+void GameControler::inter_traverse()
+{
+	auto allplayers = (AllPlayersVector*)getChildByTag(allplayersTag);
+	for (auto players1 : allplayers->allPlayersVector) {
+		for (auto players2 : allplayers->allPlayersVector) {
+			if (players1 != players2) {
+				if (players1->ifAIplayer) {
+					aiControl(players1, players2);
+				}
+				//增加玩家间吞噬判断函数
+			}
+		}
+		if (players1->ifAIplayer)
+			move(players1->desitination.x, players1->desitination.y, players1);
+	}
+}
+
+void GameControler::aiControl(PlayerVector* players1, PlayerVector* players2)
+{
+	//以容器的第一个元素作为代表元判断距离
+	auto player1 = *(players1->playervector.begin());
+	auto player2 = *(players2->playervector.begin());
+	if (lenth(player1->getPosition() - player2->getPosition()) < 24) { //两玩家靠近时
+		if (players1->aver_scale > players2->aver_scale) {
+			if (if_attack(players1, players2)) {
+				for (auto player : players1->playervector) {  //存储分裂方向的坐标
+					player->x = (players1->desitination - player->getPosition()).x;
+					player->y = (players1->desitination - player->getPosition()).y;
+				}
+				divide(players1);
+			}
+			else
+				players1->desitination = players1->closestfood;
+		}
+		else
+			players1->desitination = 2 * player1->getPosition() - player2->getPosition(); //向反方向逃离
+	}
+	else
+		players1->desitination = players1->closestfood;
+}
+
+void GameControler::move(float desitination_x, float sesitination_y, PlayerVector* players)
+{
+	auto bg = (BackGround*)getChildByTag(bgTag);
+	//移动AI玩家的小球
+	for (auto player : players->playervector) {
+		//AI玩家的相对坐标
+		Vec2 point = player->getPosition();
+		//存储每个玩家小球的移动参量
+		player->x = desitination_x - point.x;
+		player->y = sesitination_y - point.y;
+		float r = lenth(player->x, player->y);
+
+		//速度参数
+		player->speed = SPEEDPARAMETER;
+
+		if (player->x != 0 || player->y != 0) {
+			player->setPosition(point + bg->get_scale() / 4 * (player->speed - 2 * player->spritescale)
+				*Vec2(player->x / r, player->y / r) / bg->get_scale());  //需除去放缩的比例
+		}
+	}
 }

@@ -25,7 +25,7 @@ public:
 	void menuSettingCallback(cocos2d::Ref* pSender);
 	void menuHelpCallback(cocos2d::Ref* pSender);
 	void menuExitCallback(cocos2d::Ref *pSender);
-
+	//用于暂停游戏的函数
 	void pause();
 
 	// implement the "static create()" method manually

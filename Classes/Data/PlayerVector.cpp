@@ -10,11 +10,14 @@ bool PlayerVector::init()
 	return true;
 }
 
-PlayerVector* PlayerVector::create()
+PlayerVector* PlayerVector::create(bool ifAIplayer)
 {
 	PlayerVector* players = new PlayerVector();
 	if (players->init())
+	{
+		players->ifAIplayer = ifAIplayer;
 		players->autorelease();
+	}
 	else
 	{
 		delete players;
@@ -24,18 +27,10 @@ PlayerVector* PlayerVector::create()
 	return players;
 }
 
-bool PlayerVector::init_on(BackGround* bg)
+void PlayerVector::set_scale()
 {
-	auto player = Player::create();
-	player->setScale(player->spritescale / bg->get_scale());
-	player->setPosition(Vec2(bg->getContentSize().width / 2, bg->getContentSize().height / 2));
-	//Ìí¼ÓÅö×²
-	auto body = PhysicsBody::createCircle(player->getContentSize().width / 2 );
-	player->setPhysicsBody(body);
-
-	bg->addChild(player, 2);
-	player->onbg = true;
-	playervector.pushBack(player);
-
-	return true;
+	float sum_scale = 0;
+	for (auto player : playervector)
+		sum_scale += player->spritescale;
+	aver_scale = sum_scale / playervector.size();
 }
