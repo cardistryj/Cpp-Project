@@ -36,13 +36,18 @@ Player* Player::playerclone(void)
 	_player->x = x;
 	_player->y = y;
 	auto r = sqrt(x*x + y*y);
-	//添加刚体
-	auto body = PhysicsBody::createCircle(_player->getContentSize().width / 2);
-	_player->setPhysicsBody(body);
 
-	//设置克隆小球的坐标稍微偏离原始小球坐标
-	_player->setPosition(getPosition()+ Vec2(x/r, y/r)*getContentSize().width/2*spritescale);
-	_player->onbg = onbg;
+	auto body = getPhysicsBody();
+	//添加刚体
+	auto _body = PhysicsBody::createCircle(_player->getContentSize().width / 2);
+	_body->setCategoryBitmask(body->getCategoryBitmask());
+	_body->setCollisionBitmask(body->getCollisionBitmask());
+	_player->setPhysicsBody(_body);
+
+	_player->setPosition(getPosition() + Vec2(x / r, y / r)*getContentSize().width / 10 * spritescale);
+	_player->eated = eated;
+	_player->combined = combined;
+	_player->can_combine = false;
 
 	return _player;
 }

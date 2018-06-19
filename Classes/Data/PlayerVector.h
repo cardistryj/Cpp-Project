@@ -3,7 +3,7 @@
 #include"Player.h"
 #include"BackGround.h"
 
-#define MAXPLAYERNUMBER 21
+#define MAXPLAYERNUMBER 11
 //Íæ¼ÒÈÝÆ÷
 class PlayerVector:public cocos2d::Node
 {

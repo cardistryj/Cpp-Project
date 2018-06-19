@@ -89,7 +89,7 @@ void GameScene::onEnter()
 	listenerMouse->onMouseScroll = [&](Event *event) {
 		EventMouse* e = (EventMouse*)event;
 		auto gamecontroler = (GameControler*)getChildByTag(controlerTag);
-		if (!ifPause)
+		if (!ifPause&&if_humanplayer_alive && !if_gameover)
 		{
 			if (e->getScrollY()<0)
 				gamecontroler->scalebg(-0.2);
@@ -104,7 +104,7 @@ void GameScene::onEnter()
 		auto gamecontroler = (GameControler*)getChildByTag(controlerTag);
 		auto allplayersvector = (AllPlayersVector*)gamecontroler->getChildByTag(allplayersTag);
 		auto humanplayers = *(allplayersvector->allPlayersVector.begin());
-		if (!ifPause) {
+		if (!ifPause&&if_humanplayer_alive&&!if_gameover) {
 			switch (keycode) {
 			case EventKeyboard::KeyCode::KEY_ESCAPE:
 				pause();
@@ -153,10 +153,19 @@ void GameScene::update(float dt)	//使用update函数移动背景
 {
 	auto gamecontroler = (GameControler*)getChildByTag(controlerTag);
 
-	gamecontroler->move(event_x,event_y);
+	if (if_humanplayer_alive)
+		gamecontroler->move(event_x, event_y);
+	else if (!if_gameover)
+	{
+		gameover();
+		if_gameover = true;
+	}
 	gamecontroler->traverse();
 	gamecontroler->combine();
 	gamecontroler->inter_traverse();
+
+	if (if_humanplayer_alive)
+		if_humanplayer_alive = gamecontroler->check_playerdead();
 }
 
 void GameScene::pause()
@@ -196,7 +205,35 @@ void GameScene::pause()
 	menu->setPosition(Vec2::ZERO);
 	menu->setTag(pausemenuTag);
 	this->addChild(menu, 2);
+}
 
+void GameScene::gameover()
+{
+	log("gameover");
+	auto visibleSize = Director::getInstance()->getVisibleSize();
+	Vec2 origin = Director::getInstance()->getVisibleOrigin();
+	auto bg = (BackGround*)getChildByTag(controlerTag)->getChildByTag(bgTag);
+	bg->runAction(FadeTo::create(0.5, 80));
+
+	//添加游戏结束菜单
+	auto title = Label::createWithTTF("Game over", "fonts/Marker Felt.ttf", 48);
+	title->setColor(Color3B::RED);
+	title->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 80));
+	this->addChild(title,2);
+
+	auto restartlabel = Label::createWithTTF("Restart", "fonts/Marker Felt.ttf", 36);
+	restartlabel->setColor(Color3B::RED);
+	auto restartItem = MenuItemLabel::create(restartlabel, CC_CALLBACK_1(GameScene::menuRestartCallback, this));
+	restartItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 180));
+
+	auto exitlabel = Label::createWithTTF("Exit", "fonts/Marker Felt.ttf", 36);
+	exitlabel->setColor(Color3B::RED);
+	auto exitItem = MenuItemLabel::create(exitlabel, CC_CALLBACK_1(GameScene::menuExitCallback, this));
+	exitItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 280));
+
+	auto menu = Menu::create(restartItem, exitItem, NULL);
+	menu->setPosition(Vec2::ZERO);
+	this->addChild(menu, 2);
 }
 
 void GameScene::menuContinueCallback(cocos2d::Ref *pSender)

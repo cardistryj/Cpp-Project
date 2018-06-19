@@ -64,6 +64,10 @@ void AllPlayersVector::init(BackGround* bg, int size)
 		player->setScale(STARTPLSCALE / bg->get_scale());
 		//Ìí¼ÓÅö×²¸ÕÌå
 		auto body = PhysicsBody::createCircle(player->getContentSize().width / 2);
+		//ÉèÖÃÅö×²ÑÚÂë
+		int bitmask = pow(2, i);
+		body->setCategoryBitmask(bitmask);
+		body->setCollisionBitmask(bitmask);
 		player->setPhysicsBody(body);
 
 		bg->addChild(player, 2);

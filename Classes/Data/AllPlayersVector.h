@@ -5,6 +5,8 @@
 class AllPlayersVector :public cocos2d::Node
 {
 	cocos2d::Vector<PlayerVector*> allPlayersVector;
+	//存储要删除的玩家的容器
+	cocos2d::Vector<PlayerVector*> toerase;
 public:
 	friend class GameControler;
 	friend class GameScene;

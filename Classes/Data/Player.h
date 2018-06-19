@@ -11,7 +11,9 @@ class Player:public cocos2d::Sprite
 	float speed = 0;
 
 	float spritescale = STARTPLSCALE;
-	bool onbg = true;//判断小球是否还在bg上
+	bool eated = false;//判断是否被吞噬
+	bool combined = false; //判断是否被合并
+	bool can_combine = true; //判断能否被合并
 
 	Player* playerclone(void);
 	virtual bool init();
