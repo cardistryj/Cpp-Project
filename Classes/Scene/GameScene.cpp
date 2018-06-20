@@ -4,6 +4,9 @@
 #include "SimpleAudioEngine.h"
 USING_NS_CC;
 
+//定义分数参数
+#define SCOREPARAMETER 10000
+
 Scene* GameScene::createScene()
 {
 	auto scene = Scene::createWithPhysics();
@@ -26,20 +29,25 @@ bool GameScene::init()
 	auto visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
+	//添加分数显示
+	auto scoreLabel = Label::createWithTTF("Score:  ", "fonts/Marker Felt.ttf", 12);
+	scoreLabel->setPosition(origin + visibleSize - scoreLabel->getContentSize());
+	scoreLabel->setColor(Color3B::RED);
+	scoreLabel->setTag(scorelabelTag);
+	this->addChild(scoreLabel, 2);
+
 	//初始化控制器
 	auto gamecontroler = GameControler::create();
 	gamecontroler->setTag(controlerTag);
 	this->addChild(gamecontroler, 1);
 
-	//创建并添加背景
 	auto bg = BackGround::create();
 	bg->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
 	bg->setColor(Color3B(245, 245, 245));
 	bg->setTag(bgTag);
-	bg->setCascadeOpacityEnabled(true);  //便于调整整体透明度
+	bg->setCascadeOpacityEnabled(true);
 	gamecontroler->addChild(bg, 1);
 
-	//为背景添加碰撞层
 	auto size = bg->getContentSize();
 	size.width += DEFAULTWIDTH /2 ;
 	size.height += DEFAULTWIDTH /2 ;
@@ -54,8 +62,12 @@ bool GameScene::init()
 	auto circles = Circles::create();
 	circles->setTag(circlesTag);
 	gamecontroler->addChild(circles, 1);
-	//在背景上添加小球
 	circles->addcirclesto(bg);
+
+	auto virus = Virus::create();
+	virus->setTag(virusTag);
+	gamecontroler->addChild(virus, 1);
+	virus->addvirusto(bg);
 
 	return true;
 }
@@ -149,9 +161,12 @@ void GameScene::onExit()
 	unscheduleUpdate();
 }
 
-void GameScene::update(float dt)	//使用update函数移动背景
+void GameScene::update(float dt)
 {
+	auto visibleSize = Director::getInstance()->getVisibleSize();
+	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 	auto gamecontroler = (GameControler*)getChildByTag(controlerTag);
+	auto scoreLabel = (Label*)getChildByTag(scorelabelTag);
 
 	if (if_humanplayer_alive)
 		gamecontroler->move(event_x, event_y);
@@ -162,10 +177,16 @@ void GameScene::update(float dt)	//使用update函数移动背景
 	}
 	gamecontroler->traverse();
 	gamecontroler->combine();
-	gamecontroler->inter_traverse();
+	score = SCOREPARAMETER*	gamecontroler->inter_traverse();
 
 	if (if_humanplayer_alive)
 		if_humanplayer_alive = gamecontroler->check_playerdead();
+
+	if (score >= highestscore)
+		highestscore = score;
+	//更新分数
+	scoreLabel->setString(String::createWithFormat("Score:%d/%d", score,highestscore)->getCString());
+	scoreLabel->setPosition(origin + visibleSize - scoreLabel->getContentSize()/2);
 }
 
 void GameScene::pause()
@@ -239,7 +260,7 @@ void GameScene::gameover()
 void GameScene::menuContinueCallback(cocos2d::Ref *pSender)
 {
 	ifPause = false;
-	removeChildByTag(pausemenuTag);  //移除暂停菜单
+	removeChildByTag(pausemenuTag);
 
 	auto bg = (BackGround*)getChildByTag(controlerTag)->getChildByTag(bgTag);
 	bg->runAction(FadeTo::create(0.5, 255));

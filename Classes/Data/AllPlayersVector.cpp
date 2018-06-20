@@ -29,7 +29,6 @@ void AllPlayersVector::init(BackGround* bg, int size)
 {
 	auto visibleSize = Director::getInstance()->getVisibleSize();
 
-	//随机生成颜色
 	Color color;
 	srand((unsigned)time(NULL));
 	for (int i = 0; i < size; i++)
@@ -62,9 +61,8 @@ void AllPlayersVector::init(BackGround* bg, int size)
 			player->setPosition(Vec2(bg->getContentSize().width / 2, bg->getContentSize().height / 2));
 		}
 		player->setScale(STARTPLSCALE / bg->get_scale());
-		//添加碰撞刚体
+
 		auto body = PhysicsBody::createCircle(player->getContentSize().width / 2);
-		//设置碰撞掩码
 		int bitmask = pow(2, i);
 		body->setCategoryBitmask(bitmask);
 		body->setCollisionBitmask(bitmask);
@@ -72,7 +70,7 @@ void AllPlayersVector::init(BackGround* bg, int size)
 
 		bg->addChild(player, 2);
 
-		players->aver_scale = STARTPLSCALE;
+		players->sum_scale = STARTPLSCALE*STARTPLSCALE;
 		(players->playervector).pushBack(player);
 
 		allPlayersVector.pushBack(players);

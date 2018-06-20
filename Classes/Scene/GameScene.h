@@ -15,6 +15,10 @@ class GameScene : public cocos2d::LayerColor
 	bool if_humanplayer_alive = true;
 	//定义游戏是否结束
 	bool if_gameover = false;
+
+	//定义分数
+	int score = 0;
+	int highestscore = 0;
 public:
 
 	static cocos2d::Scene* createScene();

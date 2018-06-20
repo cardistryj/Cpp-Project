@@ -10,8 +10,8 @@ class PlayerVector:public cocos2d::Node
 	cocos2d::Vector<Player*> playervector;
 	//定义存储将要删除的小球的容器
 	cocos2d::Vector<Player*> toerase;
-	//定义平均小球大小
-	float aver_scale = 0;
+	//定义总面积大小
+	float sum_scale = 0;
 
 	//仅与AI玩家有关的两个参数
 	//定义是否是AI玩家的标签

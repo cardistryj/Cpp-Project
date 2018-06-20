@@ -23,7 +23,6 @@ bool SettingScene::init()
 	auto visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-	//create and add background
 	auto bg = Sprite::create("startbackground.png");
 	bg->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
 	this->addChild(bg, 0);
@@ -44,9 +43,6 @@ bool SettingScene::init()
 	auto musicToggleMenuItem = MenuItemToggle::createWithCallback(
 		CC_CALLBACK_1(SettingScene::menuMusicToggleCallback, this), musicOnMenuItem, musicOffMenuItem, NULL);
 	musicToggleMenuItem->setPosition(Vec2(origin.x + 600, origin.y + 550));
-
-	//操作：选择键盘还是鼠标
-	
 
 	//ok button
 	auto okMenuItem = MenuItemImage::create("CloseNormal.png", "CloseSelected.png",

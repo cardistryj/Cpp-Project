@@ -8,13 +8,10 @@ bool Circles::init()
 	{
 		return false;
 	}
-	//创建纹理缓存对象
 	Texture2D *texture = Director::getInstance()->getTextureCache()->addImage("ball.png");
 
-	//初始化Vector
 	spriteVector = Vector<Sprite *>(MAXCIRCLENUMBER);
 	for (int i = 0; i < MAXCIRCLENUMBER; i++) {
-		//使用纹理生成小球
 		auto sprite = CCSprite::createWithTexture(texture);
 		spriteVector.pushBack(sprite);
 	}
@@ -39,9 +36,8 @@ Circles* Circles::create()
 void Circles::addcirclesto(BackGround* bg)
 {
 	Color color;
-	//初始化随机数种子
+
 	srand((unsigned)time(NULL));
-	
 	for (auto sprite : spriteVector)
 	{
 		unsigned randomnumber = rand() % 12;
@@ -51,6 +47,6 @@ void Circles::addcirclesto(BackGround* bg)
 		sprite->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
 			, CCRANDOM_0_1()*bg->getContentSize().height));
 		
-		bg->addChild(sprite, 1);  //添加至背景节点便于整体的放缩
+		bg->addChild(sprite, 1);
 	}
 }

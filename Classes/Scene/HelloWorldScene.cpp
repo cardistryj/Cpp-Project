@@ -33,7 +33,6 @@ bool HelloWorld::init()
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-	//创建并添加背景
 	auto bg = Sprite::create("startbackground.png");
 	bg->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
 	this->addChild(bg,0);
@@ -121,7 +120,6 @@ bool HelloWorld::init()
     return true;
 }
 
-//进入游戏场景
 void HelloWorld::menuStartCallback(Ref* pSender)
 {
 	auto sc = GameScene::createScene();
@@ -129,7 +127,6 @@ void HelloWorld::menuStartCallback(Ref* pSender)
 	Director::getInstance()->replaceScene(reScene);
 }
 
-//进入设置场景
 void HelloWorld::menuSettingCallback(Ref* pSender)
 {
 	auto sc = SettingScene::createScene();

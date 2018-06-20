@@ -1,6 +1,7 @@
 #pragma once
 #include "cocos2d.h"
 #include"Circles.h"
+#include"Virus.h"
 #include"PlayerVector.h"
 #include"AllPlayersVector.h"
 
@@ -15,7 +16,10 @@ typedef enum
 	, allplayersTag
 	, circlesTag
 	, pausemenuTag
+	,scorelabelTag
+	,virusTag
 }Tag;
+
 //存储控制游戏函数的类
 class GameControler:public cocos2d::Node
 {
@@ -29,7 +33,7 @@ class GameControler:public cocos2d::Node
 		//运用勾股定理判断两圆是否内含
 		return ((lenth(position)< (r1 - r2))&&r1>r2);
 	}
-	void set_combine(Ref* pSender); //设置能否合并标签
+	void action_end(Ref* pSender); //设置能否合并标签
 
 	bool if_attack(PlayerVector* , PlayerVector* ); //判断能否进行分裂攻击
 
@@ -40,11 +44,11 @@ class GameControler:public cocos2d::Node
 	void divide(PlayerVector*);  //玩家分裂操作
 	void combine();  //玩家小球之间的合并
 	void traverse();  //遍历玩家容器与食物
-	void eat(Player*, cocos2d::Sprite*);  //玩家与食物之间吞噬操作
+	void eat(PlayerVector*,Player*, cocos2d::Sprite*);  //玩家与食物之间吞噬操作
 	void erase_combined();  //删除被合并掉的玩家小球
 
 	void erase_eated();  //删除被吞噬掉的玩家小球
-	void inter_traverse(); //在两个玩家容器之间遍历
+	float inter_traverse(); //在两个玩家容器之间遍历,返回人类玩家的总面积
 	void eat_player(PlayerVector*, PlayerVector*);  //玩家之间的吞噬
 	void aiControl(PlayerVector*, PlayerVector*);	//控制AI玩家小球的行为
 	void move(float, float, PlayerVector*);  //移动AI小球

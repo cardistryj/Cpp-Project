@@ -29,8 +29,10 @@ PlayerVector* PlayerVector::create(bool ifAIplayer)
 
 void PlayerVector::set_scale()
 {
-	float sum_scale = 0;
+	sum_scale = 0;
 	for (auto player : playervector)
-		sum_scale += player->spritescale;
-	aver_scale = sum_scale / playervector.size();
+	{
+		if (!player->eated && !player->combined)
+			sum_scale += player->spritescale*player->spritescale;
+	}
 }
