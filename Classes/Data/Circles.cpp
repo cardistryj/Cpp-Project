@@ -43,10 +43,10 @@ void Circles::addcirclesto(BackGround* bg)
 		unsigned randomnumber = rand() % 12;
 		unsigned char *c = color.getColor(randomnumber);
 		sprite->setColor(Color3B(*c, *(c + 1), *(c + 2)));
-		sprite->setScale(CIRCLESCALE / bg->get_scale());
+		sprite->setScale(CIRCLESCALE / DEFAULTBGSCALE);
 		sprite->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
 			, CCRANDOM_0_1()*bg->getContentSize().height));
 		
-		bg->addChild(sprite, 1);
+		bg->addChild(sprite, 0);
 	}
 }

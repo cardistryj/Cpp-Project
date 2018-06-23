@@ -63,12 +63,12 @@ void AllPlayersVector::init(BackGround* bg, int size)
 		player->setScale(STARTPLSCALE / bg->get_scale());
 
 		auto body = PhysicsBody::createCircle(player->getContentSize().width / 2);
-		int bitmask = pow(2, i);
+		int bitmask = pow(2, i+1);  //以2的n（n>1）次方设置碰撞掩码
 		body->setCategoryBitmask(bitmask);
 		body->setCollisionBitmask(bitmask);
 		player->setPhysicsBody(body);
 
-		bg->addChild(player, 2);
+		bg->addChild(player, 3);
 
 		players->sum_scale = STARTPLSCALE*STARTPLSCALE;
 		(players->playervector).pushBack(player);

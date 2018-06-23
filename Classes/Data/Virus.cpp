@@ -3,16 +3,9 @@ USING_NS_CC;
 
 bool Virus::init()
 {
-	if (!Node::create())
+	if (!Sprite::initWithFile("ball.png"))
 	{
 		return false;
-	}
-	Texture2D *texture = Director::getInstance()->getTextureCache()->addImage("ball.png");
-
-	virusvector = Vector<Sprite *>(MAXVIRUSNUMBER);
-	for (int i = 0; i < MAXVIRUSNUMBER; i++) {
-		auto sprite = CCSprite::createWithTexture(texture);
-		virusvector.pushBack(sprite);
 	}
 	return true;
 }
@@ -33,15 +26,12 @@ Virus* Virus::create()
 	return virus;
 }
 
-void Virus::addvirusto(BackGround* bg)
+Virus* Virus::virus_clone()
 {
-	for (auto sprite : virusvector)
-	{
-		sprite->setColor(Color3B::BLACK);
-		sprite->setScale(VIRUSSCALE / bg->get_scale());
-		sprite->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
-			, CCRANDOM_0_1()*bg->getContentSize().height));
-
-		bg->addChild(sprite, 1);
-	}
+	auto virus = Virus::create();
+	virus->virusscale = virusscale;
+	virus->setColor(getColor());
+	virus->setPosition(getPosition());
+	virus->setScale(VIRUSSCALE/DEFAULTBGSCALE);
+	return virus;
 }

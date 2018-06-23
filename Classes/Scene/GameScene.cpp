@@ -49,8 +49,8 @@ bool GameScene::init()
 	gamecontroler->addChild(bg, 1);
 
 	auto size = bg->getContentSize();
-	size.width += DEFAULTWIDTH /2 ;
-	size.height += DEFAULTWIDTH /2 ;
+	size.width += DEFAULTWIDTH*2 /DEFAULTBGSCALE ;
+	size.height += DEFAULTWIDTH*2 /DEFAULTBGSCALE ;
 	auto body = PhysicsBody::createEdgeBox(size, PHYSICSBODY_MATERIAL_DEFAULT, DEFAULTWIDTH);
 	bg->setPhysicsBody(body);
 
@@ -64,10 +64,10 @@ bool GameScene::init()
 	gamecontroler->addChild(circles, 1);
 	circles->addcirclesto(bg);
 
-	auto virus = Virus::create();
-	virus->setTag(virusTag);
-	gamecontroler->addChild(virus, 1);
-	virus->addvirusto(bg);
+	auto virusvector = VirusVector::create();
+	virusvector->setTag(virusTag);
+	gamecontroler->addChild(virusvector, 1);
+	virusvector->addvirusto(bg);
 
 	return true;
 }
@@ -132,6 +132,9 @@ void GameScene::onEnter()
 			case EventKeyboard::KeyCode::KEY_DOWN_ARROW:
 				gamecontroler->scalebg(0.2);
 				break;
+			case EventKeyboard::KeyCode::KEY_W:
+				gamecontroler->spit(humanplayers);
+				break;
 			default:
 				break;
 			}
@@ -176,6 +179,7 @@ void GameScene::update(float dt)
 		if_gameover = true;
 	}
 	gamecontroler->traverse();
+	gamecontroler->virus_traverse();
 	gamecontroler->combine();
 	score = SCOREPARAMETER*	gamecontroler->inter_traverse();
 
@@ -185,8 +189,11 @@ void GameScene::update(float dt)
 	if (score >= highestscore)
 		highestscore = score;
 	//更新分数
-	scoreLabel->setString(String::createWithFormat("Score:%d/%d", score,highestscore)->getCString());
-	scoreLabel->setPosition(origin + visibleSize - scoreLabel->getContentSize()/2);
+	if (if_humanplayer_alive)
+	{
+		scoreLabel->setString(String::createWithFormat("Score:%d/%d", score, highestscore)->getCString());
+		scoreLabel->setPosition(origin + visibleSize - scoreLabel->getContentSize() / 2);
+	}
 }
 
 void GameScene::pause()

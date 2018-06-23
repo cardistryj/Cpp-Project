@@ -39,26 +39,30 @@ Player* Player::playerclone(int i)
 		_player->y = y;
 		break;
 	case 2:
-		_player->x = y;
-		_player->y = -x;
+		_player->x = -x;
+		_player->y = -y;
 		break;
 	case 3:
 		_player->x = -y;
 		_player->y = x;
 		break;
 	case 4:
+		_player->x = y;
+		_player->y = -x;
+		break;
+	case 5:
 		_player->x = (x + y) / sqrt(2);
 		_player->y = (y - x) / sqrt(2);
 		break;
-	case 5:
+	case 6:
 		_player->x = (x - y) / sqrt(2);
 		_player->y = (y + x) / sqrt(2);
 		break;
-	case 6:
+	case 7:
 		_player->x = (-x - y) / sqrt(2);
 		_player->y = (-y + x) / sqrt(2);
 		break;
-	case 7:
+	case 8:
 		_player->x = (-x + y) / sqrt(2);
 		_player->y = (-y - x) / sqrt(2);
 		break;
@@ -79,4 +83,9 @@ Player* Player::playerclone(int i)
 	_player->combined = combined;
 
 	return _player;
+}
+
+void Player::losingscale()
+{
+	spritescale = sqrt(spritescale*spritescale - LOSINGSCALE*LOSINGSCALE);
 }

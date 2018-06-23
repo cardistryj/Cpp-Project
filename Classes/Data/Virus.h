@@ -6,14 +6,15 @@
 //∂®“Â≤°∂æ≥ﬂ¥Á
 #define VIRUSSCALE 0.1
 
-class Virus :public cocos2d::Node
+class Virus :public cocos2d::Sprite
 {
-	cocos2d::Vector<cocos2d::Sprite*> virusvector;
+	float virusscale;
 public:
 	friend class GameControler;
+	friend class VirusVector;
 
 	inline bool init();
 	static Virus* create();
-	void addvirusto(BackGround*);
+	Virus* virus_clone();
 };
 

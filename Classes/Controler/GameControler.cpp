@@ -1,7 +1,7 @@
 #include"GameControler.h"
 USING_NS_CC;
 //定义小球速度参数默认值
-#define SPEEDPARAMETER 1.3
+#define SPEEDPARAMETER 1.3*4/DEFAULTBGSCALE
 
 bool GameControler::init()
 {
@@ -42,8 +42,9 @@ bool GameControler::if_attack(PlayerVector* players1, PlayerVector* players2)
 		{
 			if (player1->spritescale / 2 > player2->spritescale)
 			{
-				players1->desitination = Vec2(player2->getPosition().x// + player2->x
-					, player2->getPosition().y// + player2->y
+				float r = lenth(player2->x, player2->y);
+				players1->desitination = Vec2(player2->getPosition().x + 3*player2->x/r
+					, player2->getPosition().y + 3*player2->y/r
 				);
 				return true;
 			}
@@ -73,7 +74,7 @@ void GameControler::move(float &event_x, float &event_y)
 
 	//鼠标位于靠近屏幕中心位置时，背景移动速度稍作减小
 	if (r < 16)
-		speed = 0.5 + 0.05*r;
+		speed = 0.5 + (SPEEDPARAMETER - 0.5) / 16 * r;
 	//以平均小球缩放参数以作为背景移动的一个速度参数
 	float sumscale = 0;
 	float averscale = 0;
@@ -99,7 +100,7 @@ void GameControler::move(float &event_x, float &event_y)
 			//鼠标靠近小球时，速度稍微减小
 			player->speed = SPEEDPARAMETER;
 			if (r < 16)
-				player->speed = 0.5 + 0.05*r;
+				player->speed = 0.5 + (SPEEDPARAMETER - 0.5) / 16 * r;
 
 			if (player->x != 0 || player->y != 0) {
 				player->setPosition(point + backgroundscale / 4 * (player->speed - 2 * player->spritescale)*
@@ -119,6 +120,48 @@ void GameControler::move(float &event_x, float &event_y)
 		event_x = event_x + backgroundscale / 4 * (speed - 2 * averscale)*Vec2(x / r, y / r).x / backgroundscale;
 		event_y = event_y + backgroundscale / 4 * (speed - 2 * averscale)*Vec2(x / r, y / r).y / backgroundscale;
 	}
+}
+
+void GameControler::move(float desitination_x, float desitination_y, PlayerVector* players)
+{
+	auto bg = (BackGround*)getChildByTag(bgTag);
+
+	for (auto player : players->playervector) {
+		Vec2 point = player->getPosition();
+		player->x = desitination_x - point.x;
+		player->y = desitination_y - point.y;
+		float r = lenth(player->x, player->y);
+		player->speed = SPEEDPARAMETER;
+
+		if (player->x != 0 || player->y != 0) {
+			player->setPosition(point + bg->get_scale() / 4 * (player->speed - 2 * player->spritescale)
+				*Vec2(player->x / r, player->y / r) / bg->get_scale());  //需除去放缩的比例
+		}
+	}
+}
+
+void GameControler::aiControl(PlayerVector* players1, PlayerVector* players2)
+{
+	//以容器的第一个元素作为代表元判断距离
+	auto player1 = *(players1->playervector.begin());
+	auto player2 = *(players2->playervector.begin());
+	if (lenth(player1->getPosition() - player2->getPosition()) < 25) {
+		if (players1->sum_scale > players2->sum_scale) {
+			if (if_attack(players1, players2)) {
+				for (auto player : players1->playervector) {
+					player->x = (players1->desitination - player->getPosition()).x;
+					player->y = (players1->desitination - player->getPosition()).y;
+				}
+				divide(players1);
+			}
+			else
+				players1->desitination = players1->closestfood;
+		}
+		else
+			players1->desitination = 2 * player1->getPosition() - player2->getPosition(); //向反方向逃离
+	}
+	else
+		players1->desitination = players1->closestfood;
 }
 
 void GameControler::scalebg(const float scaleparameter)
@@ -146,8 +189,8 @@ void GameControler::scalebg(const float scaleparameter)
 		//重新添加碰撞刚体
 		bg->getPhysicsBody()->removeAllShapes();
 		auto size = bg->getContentSize();
-		size.width += DEFAULTWIDTH / 2 / bg->get_scale()*DEFAULTBGSCALE;
-		size.height += DEFAULTWIDTH / 2 / bg->get_scale()*DEFAULTBGSCALE;
+		size.width += DEFAULTWIDTH * 2 / backgroundscale;
+		size.height += DEFAULTWIDTH * 2 / backgroundscale;
 		auto body = PhysicsBody::createEdgeBox(size, PHYSICSBODY_MATERIAL_DEFAULT, DEFAULTWIDTH);
 		bg->setPhysicsBody(body);
 	}
@@ -196,20 +239,21 @@ void GameControler::divide(PlayerVector* players)
 				float r = lenth(player->x, player->y);
 				
 				player->spritescale = player->spritescale / sqrt(2);
-				player->runAction(ScaleTo::create(0.8, player->spritescale / DEFAULTBGSCALE));
+
 				//克隆小球
 				auto _player = player->playerclone();
-				bg->addChild(_player, 2);
+				bg->addChild(_player, 3);
 				_player->if_action_end = false;
 				//分裂后两小球拉开距离,设置动画
-				FiniteTimeAction* action1 = (FiniteTimeAction *)MoveTo::create(0.8,
-					_player->getPosition()+30 * Vec2(_player->x / r, _player->y / r));
+				FiniteTimeAction* action1 = (FiniteTimeAction *)MoveBy::create(0.8, 25 * Vec2(_player->x / r, _player->y / r));
 				FiniteTimeAction* action2 = (FiniteTimeAction *)ScaleTo::create(0.8, _player->spritescale / DEFAULTBGSCALE);
 				FiniteTimeAction* action3 = CallFuncN::create(CC_CALLBACK_1(GameControler::action_end, this));
 				ActionInterval* _action = Spawn::create(action1, action2, NULL);
 				ActionInterval* action = Sequence::create(_action, action3, NULL);
 
-				player->runAction(MoveTo::create(0.8, player->getPosition() - 6 * Vec2(player->x / r, player->y / r)));
+				player->losingscale();
+				player->runAction(ScaleTo::create(0.8, player->spritescale / DEFAULTBGSCALE));
+				player->runAction(MoveBy::create(0.8, -6 * Vec2(player->x / r, player->y / r)));
 				_player->runAction(action);
 
 				players->playervector.pushBack(_player);
@@ -244,17 +288,18 @@ void GameControler::combine()
 					&&player1->if_action_end&&player2->if_action_end)
 				{
 					if (isCircleCover(DEFAULTBGSCALE*(player1->getPosition() - player2->getPosition()),
-						player1->getContentSize().width / 2 * player1->spritescale * 4 / 5,
-						-player2->getContentSize().width / 2 * player2->spritescale * 4 / 5) && player1->spritescale > player2->spritescale)
+						player1->getContentSize().width / 2 * player1->spritescale * 2/3,
+						-player2->getContentSize().width / 2 * player2->spritescale * 2/3) && player1->spritescale > player2->spritescale)
 					{
 						player1->spritescale = lenth(player1->spritescale, player2->spritescale);
+						player1->losingscale();
 						player1->runAction(ScaleTo::create(0.8, player1->spritescale / DEFAULTBGSCALE));
 
 						//设置动画
-						FiniteTimeAction* action1 = MoveTo::create(0.5, player1->getPosition());
-						FiniteTimeAction* action2 = ScaleTo::create(0.5, player2->spritescale / DEFAULTBGSCALE / 10);
+						FiniteTimeAction* action1 = MoveTo::create(1.0, player1->getPosition());
+						FiniteTimeAction* action2 = ScaleTo::create(0.8, player2->spritescale / DEFAULTBGSCALE / 10);
 						ActionInterval* action3 = Spawn::create(action1, action2, NULL);
-						FiniteTimeAction* action4 = CallFuncN::create(CC_CALLBACK_0(GameControler::erase_combined, this));
+						FiniteTimeAction* action4 = CCCallFuncN::create(CC_CALLBACK_0(GameControler::erase_combined,this ));
 						ActionInterval* action = Sequence::create(action3, action4, NULL);
 						player2->runAction(action);
 						player2->combined = true;
@@ -271,12 +316,47 @@ void GameControler::combine()
 		scalebg(-0.1);
 }
 
+void GameControler::spit(PlayerVector* players)
+{
+	auto bg = (BackGround*)getChildByTag(bgTag);
+
+	for (auto player : players->playervector)
+	{
+		if (player->spritescale > lenth(STARTPLSCALE, SCRETIONSCALE))
+		{
+			player->spritescale = sqrt(player->spritescale*player->spritescale - SCRETIONSCALE*SCRETIONSCALE);
+			player->losingscale();
+			player->runAction(ScaleTo::create(0.8f, player->spritescale / DEFAULTBGSCALE));
+
+			auto sprite = Sprite::create("ball.png");
+			sprite->setScale(SCRETIONSCALE / DEFAULTBGSCALE);
+			sprite->setColor(player->getColor());
+
+			auto body = PhysicsBody::createCircle(sprite->getContentSize().width / 2);
+			body->setCategoryBitmask(0x01);
+			body->setCollisionBitmask(0x01);
+			sprite->setPhysicsBody(body);
+			bg->addChild(sprite, 1);
+
+			auto r = lenth(player->x, player->y);
+			sprite->setPosition(player->getPosition() +
+				player->getContentSize().width / 2 * player->spritescale / DEFAULTBGSCALE*Vec2(player->x, player->y) / r);
+			sprite->runAction(MoveBy::create(0.8f, 25 * Vec2(player->x / r, player->y / r)));
+
+			scretions.pushBack(sprite);
+		}
+	}
+	players->set_scale();
+}
+
 void GameControler::traverse()
 {
 	auto circles = (Circles*)getChildByTag(circlesTag);
 	auto allplayers = (AllPlayersVector*)getChildByTag(allplayersTag);
-	auto virus = (Virus*)getChildByTag(virusTag);
+	auto virusvector = (VirusVector*)getChildByTag(virusTag);
 
+	bool if_eat_scretion = false;
+	bool if_eat_virus = false;
 	for (auto players : allplayers->allPlayersVector)
 	{
 		//判断每个玩家是否进行了吞噬操作的标签
@@ -303,20 +383,37 @@ void GameControler::traverse()
 					player->getContentSize().width / 2 * player->spritescale,
 					circle->getContentSize().width / 2 * CIRCLESCALE))
 				{
-					eat(players,player, circle);
+					eat(player, circle);
 					ifeat = true;
 				}
 			}
 
-			for (auto _virus : virus->virusvector)
+			for (auto virus : virusvector->virusvector)
 			{
-				if (isCircleCover(DEFAULTBGSCALE*(player->getPosition() - _virus->getPosition()),
+				if (isCircleCover(DEFAULTBGSCALE*(player->getPosition() - virus->getPosition()),
 					player->getContentSize().width / 2 * player->spritescale,
-					_virus->getContentSize().width / 2 * VIRUSSCALE)&&player->spritescale>VIRUSSCALE
+					virus->getContentSize().width / 2 * virus->virusscale)
+					&&player->spritescale>virus->virusscale
 					)
 				{
-					eat(players,player, _virus);
+					eat_virus(players,player, virus);
 					ifeat = true;
+					if_eat_virus = true;
+				}
+			}
+			if (!scretions.empty())
+			{
+				for (auto scretion : scretions)
+				{
+
+					if (isCircleCover(DEFAULTBGSCALE*(player->getPosition() - scretion->getPosition()),
+						player->getContentSize().width / 2 * player->spritescale,
+						scretion->getContentSize().width / 2 * SCRETIONSCALE))
+					{
+						eat_scretion(player, scretion);
+						ifeat = true;
+						if_eat_scretion = true;
+					}
 				}
 			}
 		}
@@ -324,51 +421,151 @@ void GameControler::traverse()
 		if (ifeat)
 			players->set_scale();
 	}
+	if (if_eat_scretion)
+		erase_scretion();
+	if (if_eat_virus)
+		erase_virus();
 }
 
-void GameControler::eat(PlayerVector* players, Player* player, Sprite* sprite)
+float GameControler::inter_traverse()
+{
+
+	auto allplayers = (AllPlayersVector*)getChildByTag(allplayersTag);
+	for (auto players1 : allplayers->allPlayersVector) {
+		for (auto players2 : allplayers->allPlayersVector) {
+			if (players1 != players2) {
+				if (players1->ifAIplayer) {
+					aiControl(players1, players2);
+				}
+				eat_player(players1, players2);
+			}
+		}
+		if (players1->ifAIplayer)
+			move(players1->desitination.x, players1->desitination.y, players1);
+	}
+	erase_eated();
+	auto humanplayers = *(allplayers->allPlayersVector.begin());
+	return humanplayers->sum_scale;
+}
+
+void GameControler::virus_traverse()
 {
 	auto bg = getChildByTag(bgTag);
-	if (sprite->getColor() == Color3B::BLACK) //通过颜色判断是否是病毒
+	auto virusvector = (VirusVector*)getChildByTag(virusTag);
+	bool if_eat_scretion = false;
+	int size = virusvector->virusvector.size();
+	for (int i = 0; i<size; i++)
 	{
-		player->spritescale = lenth(player->spritescale, VIRUSSCALE/sqrt(2)) / sqrt(8);
-		player->if_action_end = false;
-		float r = lenth(player->x, player->y);
+		auto virus = *(virusvector->virusvector.begin() + i);
+		for (auto scretion : scretions)
+		{
+			if (isCircleCover(DEFAULTBGSCALE*(virus->getPosition() - scretion->getPosition()),
+				virus->getContentSize().width / 2 * virus->virusscale,
+				scretion->getContentSize().width / 2 * SCRETIONSCALE))
+			{
+				virus->virusscale = lenth(virus->virusscale, SCRETIONSCALE);
+				virus->runAction(ScaleTo::create(0.8f, virus->virusscale / DEFAULTBGSCALE));
+				scretion_toerase.pushBack(scretion);
+				if_eat_scretion = true;
+			}
+		}
+		if (virus->virusscale > 0.12)
+		{
+			virus->virusscale = VIRUSSCALE;
+			virus->runAction(ScaleTo::create(0.8f, VIRUSSCALE / DEFAULTBGSCALE));
+			auto _virus = virus->virus_clone();
+			bg->addChild(_virus, 2);
+			_virus->runAction(MoveBy::create(0.8f, 30 * Vec2(CCRANDOM_0_1() - 1, CCRANDOM_0_1() - 1)));
+			virusvector->virusvector.pushBack(_virus);
+		}
+	}
+	if (if_eat_scretion)
+		erase_scretion();
+}
 
-		FiniteTimeAction* action1 = (FiniteTimeAction *)MoveTo::create(0.5,
-			player->getPosition() - 16 * Vec2(player->x / r, player->y / r));
-		FiniteTimeAction* action2 = (FiniteTimeAction *)ScaleTo::create(0.5, player->spritescale / DEFAULTBGSCALE);
+void GameControler::eat(Player* player, Sprite* sprite)
+{
+	auto bg = getChildByTag(bgTag);
+
+	player->spritescale = lenth(player->spritescale, CIRCLESCALE);
+	player->runAction(ScaleTo::create(0.5, player->spritescale / DEFAULTBGSCALE));
+	sprite->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
+		, CCRANDOM_0_1()*bg->getContentSize().height));
+}
+
+void GameControler::eat_scretion(Player* player, Sprite* sprite)
+{
+	auto bg = getChildByTag(bgTag);
+
+	player->spritescale = lenth(player->spritescale, SCRETIONSCALE);
+	player->losingscale();
+	player->runAction(ScaleTo::create(0.8, player->spritescale / DEFAULTBGSCALE));
+	scretion_toerase.pushBack(sprite);
+}
+
+void GameControler::eat_virus(PlayerVector* players, Player* player, Virus* virus)
+{
+	auto bg = getChildByTag(bgTag);
+	auto virusvector = (VirusVector*)getChildByTag(virusTag);
+
+	player->spritescale = lenth(player->spritescale, virus->virusscale) / 3;
+	player->if_action_end = false;
+	FiniteTimeAction* action1 = (FiniteTimeAction *)ScaleTo::create(0.5, player->spritescale / DEFAULTBGSCALE);
+	FiniteTimeAction* action2 = CallFuncN::create(CC_CALLBACK_1(GameControler::action_end, this));
+	ActionInterval* action = Sequence::create(action1, action2, NULL);
+	player->runAction(action);
+
+	float r = lenth(player->x, player->y);
+
+	for (int i = 1; i < 9; i++)
+	{
+		//克隆小球
+		auto _player = player->playerclone(i);
+		bg->addChild(_player, 3);
+		_player->if_action_end = false;
+		//设置动画
+		FiniteTimeAction* action1 = (FiniteTimeAction *)MoveBy::create(0.5, 10 * Vec2(_player->x / r, _player->y / r));
+		FiniteTimeAction* action2 = (FiniteTimeAction *)ScaleTo::create(0.5, _player->spritescale / DEFAULTBGSCALE);
 		FiniteTimeAction* action3 = CallFuncN::create(CC_CALLBACK_1(GameControler::action_end, this));
 		ActionInterval* _action = Spawn::create(action1, action2, NULL);
 		ActionInterval* action = Sequence::create(_action, action3, NULL);
-		player->runAction(action);
+		_player->runAction(action);
 
-		for (int i = 1; i < 8; i++)
-		{
-			//克隆小球
-			auto _player = player->playerclone(i);
-			bg->addChild(_player, 2);
-			_player->if_action_end = false;
-			//设置动画
-			FiniteTimeAction* action1 = (FiniteTimeAction *)MoveTo::create(0.5,
-				_player->getPosition() + 10 * Vec2(_player->x / r, _player->y / r));
-			FiniteTimeAction* action2 = (FiniteTimeAction *)ScaleTo::create(0.5, _player->spritescale / DEFAULTBGSCALE);
-			FiniteTimeAction* action3 = CallFuncN::create(CC_CALLBACK_1(GameControler::action_end, this));
-			ActionInterval* _action = Spawn::create(action1, action2, NULL);
-			ActionInterval* action = Sequence::create(_action, action3, NULL);
-			_player->runAction(action);
-
-			players->playervector.pushBack(_player);
-		}
-		sprite->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
-			, CCRANDOM_0_1()*bg->getContentSize().height));
+		players->playervector.pushBack(_player);
 	}
-	else
+	virusvector->to_erase.pushBack(virus);
+
+	scalebg(0.4);
+}
+
+void GameControler::eat_player(PlayerVector* players1, PlayerVector* players2)
+{
+	for (auto player1 : players1->playervector)
 	{
-		player->spritescale = lenth(player->spritescale, CIRCLESCALE);
-		player->runAction(ScaleTo::create(0.5, player->spritescale / DEFAULTBGSCALE));
-		sprite->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
-			, CCRANDOM_0_1()*bg->getContentSize().height));
+		for (auto player2 : players2->playervector)
+		{
+			if (!player1->eated && !player2->eated)
+			{
+				if (isCircleCover(DEFAULTBGSCALE*(player1->getPosition() - player2->getPosition()),
+					player1->getContentSize().width / 2 * player1->spritescale,
+					player2->getContentSize().width / 2 * player2->spritescale) && player1->spritescale > player2->spritescale)
+				{
+					player1->spritescale = lenth(player1->spritescale, player2->spritescale);
+					player1->runAction(ScaleTo::create(0.8, player1->spritescale / DEFAULTBGSCALE));
+
+					player2->eated = true;
+				}
+			}
+		}
+	}
+}
+
+void GameControler::erase_scretion() {  //删除分泌物
+	auto bg = getChildByTag(bgTag);
+	for (auto scretion : scretion_toerase)
+	{
+		bg->removeChild(scretion);
+		scretions.eraseObject(scretion);
 	}
 }
 
@@ -417,87 +614,13 @@ void GameControler::erase_eated()
 	}
 }
 
-float GameControler::inter_traverse()
+void GameControler::erase_virus()
 {
-
-	auto allplayers = (AllPlayersVector*)getChildByTag(allplayersTag);
-	for (auto players1 : allplayers->allPlayersVector) {
-		for (auto players2 : allplayers->allPlayersVector) {
-			if (players1 != players2) {
-				if (players1->ifAIplayer) {
-					aiControl(players1, players2);
-				}
-				eat_player(players1, players2);
-			}
-		}
-		if (players1->ifAIplayer)
-			move(players1->desitination.x, players1->desitination.y, players1);
-	}
-	erase_eated();
-	auto humanplayers = *(allplayers->allPlayersVector.begin());
-	return humanplayers->sum_scale;
-}
-
-void GameControler::eat_player(PlayerVector* players1, PlayerVector* players2)
-{
-	for (auto player1 : players1->playervector)
+	auto bg = getChildByTag(bgTag);
+	auto virusvector = (VirusVector*)getChildByTag(virusTag);
+	for (auto virus : virusvector->to_erase)
 	{
-		for (auto player2 : players2->playervector)
-		{
-			if (!player1->eated&&!player2->eated)
-			{
-				if (isCircleCover(DEFAULTBGSCALE*(player1->getPosition() - player2->getPosition()),
-					player1->getContentSize().width / 2 * player1->spritescale,
-					player2->getContentSize().width / 2 * player2->spritescale) && player1->spritescale > player2->spritescale)
-				{
-					player1->spritescale = lenth(player1->spritescale, player2->spritescale);
-					player1->runAction(ScaleTo::create(0.8, player1->spritescale / DEFAULTBGSCALE));
-
-					player2->eated = true;
-				}
-			}
-		}
-	}
-}
-
-void GameControler::aiControl(PlayerVector* players1, PlayerVector* players2)
-{
-	//以容器的第一个元素作为代表元判断距离
-	auto player1 = *(players1->playervector.begin());
-	auto player2 = *(players2->playervector.begin());
-	if (lenth(player1->getPosition() - player2->getPosition()) < 35) {
-		if (players1->sum_scale > players2->sum_scale) {
-			if (if_attack(players1, players2)) {
-				for (auto player : players1->playervector) {
-					player->x = (players1->desitination - player->getPosition()).x;
-					player->y = (players1->desitination - player->getPosition()).y;
-				}
-				divide(players1);
-			}
-			else
-				players1->desitination = players1->closestfood;
-		}
-		else
-			players1->desitination = 2 * player1->getPosition() - player2->getPosition(); //向反方向逃离
-	}
-	else
-		players1->desitination = players1->closestfood;
-}
-
-void GameControler::move(float desitination_x, float sesitination_y, PlayerVector* players)
-{
-	auto bg = (BackGround*)getChildByTag(bgTag);
-
-	for (auto player : players->playervector) {
-		Vec2 point = player->getPosition();
-		player->x = desitination_x - point.x;
-		player->y = sesitination_y - point.y;
-		float r = lenth(player->x, player->y);
-		player->speed = SPEEDPARAMETER;
-
-		if (player->x != 0 || player->y != 0) {
-			player->setPosition(point + bg->get_scale() / 4 * (player->speed - 2 * player->spritescale)
-				*Vec2(player->x / r, player->y / r) / bg->get_scale());  //需除去放缩的比例
-		}
+		bg->removeChild(virus);
+		virusvector->virusvector.eraseObject(virus);
 	}
 }
