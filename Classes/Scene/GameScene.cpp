@@ -30,7 +30,7 @@ bool GameScene::init()
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
 	//添加分数显示
-	auto scoreLabel = Label::createWithTTF("Score:  ", "fonts/Marker Felt.ttf", 12);
+	auto scoreLabel = Label::createWithTTF(" ", "fonts/Marker Felt.ttf", 12);
 	scoreLabel->setPosition(origin + visibleSize - scoreLabel->getContentSize());
 	scoreLabel->setColor(Color3B::RED);
 	scoreLabel->setTag(scorelabelTag);
@@ -43,30 +43,30 @@ bool GameScene::init()
 
 	auto bg = BackGround::create();
 	bg->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
-	bg->setColor(Color3B(245, 245, 245));
+	bg->setColor(Color3B(245,245,245));
 	bg->setTag(bgTag);
 	bg->setCascadeOpacityEnabled(true);
+	bg->set_body();
 	gamecontroler->addChild(bg, 1);
 
-	auto size = bg->getContentSize();
-	size.width += DEFAULTWIDTH*2 /DEFAULTBGSCALE ;
-	size.height += DEFAULTWIDTH*2 /DEFAULTBGSCALE ;
-	auto body = PhysicsBody::createEdgeBox(size, PHYSICSBODY_MATERIAL_DEFAULT, DEFAULTWIDTH);
-	bg->setPhysicsBody(body);
+	SpriteBatchNode* spriteTexture = SpriteBatchNode::create("ball.png");
+	spriteTexture->setTag(textureTag);
+	bg->addChild(spriteTexture);
+	auto texture = spriteTexture->getTexture();
 
 	auto allplayers = AllPlayersVector::create();
 	allplayers->setTag(allplayersTag);
-	gamecontroler->addChild(allplayers);
-	allplayers->init(bg, MAXPLAYERSNUMBER);
+	bg->addChild(allplayers);
+	allplayers->init(bg, MAXPLAYERSNUMBER, texture);
 
-	auto circles = Circles::create();
+	auto circles = Circles::create(texture);
 	circles->setTag(circlesTag);
-	gamecontroler->addChild(circles, 1);
+	bg->addChild(circles, 1);
 	circles->addcirclesto(bg);
 
-	auto virusvector = VirusVector::create();
+	auto virusvector = VirusVector::create(texture);
 	virusvector->setTag(virusTag);
-	gamecontroler->addChild(virusvector, 1);
+	bg->addChild(virusvector, 1);
 	virusvector->addvirusto(bg);
 
 	return true;
@@ -101,12 +101,13 @@ void GameScene::onEnter()
 	listenerMouse->onMouseScroll = [&](Event *event) {
 		EventMouse* e = (EventMouse*)event;
 		auto gamecontroler = (GameControler*)getChildByTag(controlerTag);
+		auto bg = (BackGround*)gamecontroler->getChildByTag(bgTag);
 		if (!ifPause&&if_humanplayer_alive && !if_gameover)
 		{
 			if (e->getScrollY()<0)
-				gamecontroler->scalebg(-0.2);
+				bg->scalebg(-0.2f);
 			else
-				gamecontroler->scalebg(0.2);
+				bg->scalebg(0.2f);
 		}
 	};
 
@@ -114,8 +115,7 @@ void GameScene::onEnter()
 
 	listenerKeyboard->onKeyPressed = [&](EventKeyboard::KeyCode keycode, Event *event) {
 		auto gamecontroler = (GameControler*)getChildByTag(controlerTag);
-		auto allplayersvector = (AllPlayersVector*)gamecontroler->getChildByTag(allplayersTag);
-		auto humanplayers = *(allplayersvector->allPlayersVector.begin());
+		auto bg = (BackGround*)gamecontroler->getChildByTag(bgTag);
 		if (!ifPause&&if_humanplayer_alive&&!if_gameover) {
 			switch (keycode) {
 			case EventKeyboard::KeyCode::KEY_ESCAPE:
@@ -124,16 +124,16 @@ void GameScene::onEnter()
 				unscheduleUpdate();
 				break;
 			case  EventKeyboard::KeyCode::KEY_SPACE:
-				gamecontroler->divide(humanplayers);
+				gamecontroler->human_divide();
 				break;
 			case EventKeyboard::KeyCode::KEY_UP_ARROW:
-				gamecontroler->scalebg(-0.2);
+				bg->scalebg(-0.2f);
 				break;
 			case EventKeyboard::KeyCode::KEY_DOWN_ARROW:
-				gamecontroler->scalebg(0.2);
+				bg->scalebg(0.2f);
 				break;
 			case EventKeyboard::KeyCode::KEY_W:
-				gamecontroler->spit(humanplayers);
+				gamecontroler->human_spit();
 				break;
 			default:
 				break;
@@ -171,25 +171,21 @@ void GameScene::update(float dt)
 	auto gamecontroler = (GameControler*)getChildByTag(controlerTag);
 	auto scoreLabel = (Label*)getChildByTag(scorelabelTag);
 
-	if (if_humanplayer_alive)
+	if (if_humanplayer_alive&& !if_gameover)
 		gamecontroler->move(event_x, event_y);
 	else if (!if_gameover)
 	{
 		gameover();
 		if_gameover = true;
 	}
-	gamecontroler->traverse();
 	gamecontroler->virus_traverse();
-	gamecontroler->combine();
 	score = SCOREPARAMETER*	gamecontroler->inter_traverse();
-
-	if (if_humanplayer_alive)
-		if_humanplayer_alive = gamecontroler->check_playerdead();
+	if_humanplayer_alive = gamecontroler->traverse();
 
 	if (score >= highestscore)
 		highestscore = score;
 	//更新分数
-	if (if_humanplayer_alive)
+	if (if_humanplayer_alive&& !if_gameover)
 	{
 		scoreLabel->setString(String::createWithFormat("Score:%d/%d", score, highestscore)->getCString());
 		scoreLabel->setPosition(origin + visibleSize - scoreLabel->getContentSize() / 2);

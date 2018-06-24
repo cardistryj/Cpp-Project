@@ -1,19 +1,26 @@
 #include "VirusVector.h"
 USING_NS_CC;
 
-bool VirusVector::init()
+bool VirusVector::init(Texture2D* texture)
 {
 	if (!Node::create())
 	{
 		return false;
 	}
+
+	virusvector = Vector<Virus *>(MAXVIRUSNUMBER);
+	for (int i = 0; i < MAXVIRUSNUMBER; i++) {
+		auto sprite = Virus::create(texture);
+		virusvector.pushBack(sprite);
+	}
+
 	return true;
 }
 
-VirusVector* VirusVector::create()
+VirusVector* VirusVector::create(Texture2D* texture)
 {
 	VirusVector* virus = new VirusVector();
-	if (virus->init())
+	if (virus->init(texture))
 	{
 		virus->autorelease();
 	}
@@ -28,16 +35,24 @@ VirusVector* VirusVector::create()
 
 void VirusVector::addvirusto(BackGround* bg)
 {
-	for (int i = 0; i < MAXVIRUSNUMBER; i++)
+	for (auto virus:virusvector)
 	{
-		auto virus = Virus::create();
 		virus->setColor(Color3B::BLACK);
-		virus->virusscale = VIRUSSCALE;
+		virus->get_scale() = VIRUSSCALE;
 		virus->setScale(VIRUSSCALE / DEFAULTBGSCALE);
 		virus->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
 			, CCRANDOM_0_1()*bg->getContentSize().height));
 
 		bg->addChild(virus, 2);
-		virusvector.pushBack(virus);
+	}
+}
+
+void VirusVector::erase_virus()
+{
+	auto bg = getParent();
+	for (auto virus : to_erase)
+	{
+		bg->removeChild(virus);
+		virusvector.eraseObject(virus);
 	}
 }

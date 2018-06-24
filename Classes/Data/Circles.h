@@ -5,7 +5,7 @@
 //定义最大小球数量
 #define MAXCIRCLENUMBER 150
 //定义小球尺寸
-#define CIRCLESCALE 0.02
+#define CIRCLESCALE 0.02f
 
 class Circles :public cocos2d::Node
 {
@@ -14,7 +14,7 @@ public:
 	friend class GameControler;
 
 	Circles() = default;
-	bool init();
-	static Circles* create();
+	bool init(cocos2d::Texture2D*);
+	static Circles* create(cocos2d::Texture2D*);
 	void addcirclesto(BackGround*);
 };

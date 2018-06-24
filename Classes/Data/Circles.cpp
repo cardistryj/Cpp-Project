@@ -2,27 +2,26 @@
 #include"color.h"
 USING_NS_CC;
 
-bool Circles::init()
+bool Circles::init(Texture2D* texture)
 {
 	if (!Node::create())
 	{
 		return false;
 	}
-	Texture2D *texture = Director::getInstance()->getTextureCache()->addImage("ball.png");
 
 	spriteVector = Vector<Sprite *>(MAXCIRCLENUMBER);
 	for (int i = 0; i < MAXCIRCLENUMBER; i++) {
-		auto sprite = CCSprite::createWithTexture(texture);
+		auto sprite = Sprite::createWithTexture(texture);
 		spriteVector.pushBack(sprite);
 	}
 
 	return true;
 }
 
-Circles* Circles::create()
+Circles* Circles::create(Texture2D* texture)
 {
 	Circles* circles = new Circles();
-	if (circles->init())
+	if (circles->init(texture))
 		circles->autorelease();
 	else
 	{
@@ -46,7 +45,14 @@ void Circles::addcirclesto(BackGround* bg)
 		sprite->setScale(CIRCLESCALE / DEFAULTBGSCALE);
 		sprite->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
 			, CCRANDOM_0_1()*bg->getContentSize().height));
-		
+
+		//设置呼吸效果的动画
+		FiniteTimeAction* action1 = (FiniteTimeAction *)ScaleTo::create(0.8f, CIRCLESCALE / DEFAULTBGSCALE*1.2);
+		FiniteTimeAction* action2 = (FiniteTimeAction *)ScaleTo::create(0.8f, CIRCLESCALE / DEFAULTBGSCALE*0.8);
+		ActionInterval* action = Sequence::create(action1, action2, NULL);
+		RepeatForever * repeatforever = RepeatForever::create(action);
+		sprite->runAction(repeatforever);
+
 		bg->addChild(sprite, 0);
 	}
 }
