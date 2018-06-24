@@ -1,27 +1,20 @@
 #include"Player.h"
-#include"color.h"
+
 USING_NS_CC;
 
-bool Player::init() //添加参数
+bool Player::init(Texture2D* texture)
 {
-	if (!Sprite::initWithFile("ball.png")) 
+	if (!Sprite::initWithTexture(texture))
 	{
 		return false;
 	}
-	//随机生成颜色
-	Color color;
-	srand((unsigned)time(NULL));
-	unsigned randomnumber = rand() % 12;
-	unsigned char *c = color.getColor(randomnumber);
-	setColor(Color3B(*c, *(c + 1), *(c + 2)));
-
 	return true;
 }
 
-Player* Player::create() {
+Player* Player::create(Texture2D* texture) {
 	Player * sprite = new Player();
-	if (sprite->init()) {
-		sprite->autorelease(); //由程序控制sprite的生命周期，  
+	if (sprite->init(texture)) {
+		sprite->autorelease();  
 	}
 	else
 	{
@@ -32,24 +25,84 @@ Player* Player::create() {
 	return sprite;
 }
 
-Player* Player::playerclone(void)
+Player* Player::playerclone(Texture2D* texture, int i)
 {
-	//创建一样的精灵
-	auto _player = Player::create();
+	auto _player = Player::create(texture);
 	_player->setScale(getScale());
 	_player->setColor(getColor());
 	_player->spritescale = spritescale;
 	_player->setTag(getTag());
-	_player->x = x;
-	_player->y = y;
-	auto r = sqrt(x*x + y*y);
-	//添加刚体
-	auto body = PhysicsBody::createCircle(_player->getContentSize().width / 2);
-	_player->setPhysicsBody(body);
+	switch (i) //主要针对吞噬病毒情况的switch语句
+	{
+	case 1:
+		_player->x = x;
+		_player->y = y;
+		break;
+	case 2:
+		_player->x = -x;
+		_player->y = -y;
+		break;
+	case 3:
+		_player->x = -y;
+		_player->y = x;
+		break;
+	case 4:
+		_player->x = y;
+		_player->y = -x;
+		break;
+	case 5:
+		_player->x = (x + y) / sqrt(2);
+		_player->y = (y - x) / sqrt(2);
+		break;
+	case 6:
+		_player->x = (x - y) / sqrt(2);
+		_player->y = (y + x) / sqrt(2);
+		break;
+	case 7:
+		_player->x = (-x - y) / sqrt(2);
+		_player->y = (-y + x) / sqrt(2);
+		break;
+	case 8:
+		_player->x = (-x + y) / sqrt(2);
+		_player->y = (-y - x) / sqrt(2);
+		break;
+	default:
+		break;
+	}
 
-	//设置克隆小球的坐标稍微偏离原始小球坐标
-	_player->setPosition(getPosition()+ Vec2(x/r, y/r)*getContentSize().width/2*spritescale);
-	_player->onbg = onbg;
+	auto r = sqrt(x*x + y*y);
+
+	auto body = getPhysicsBody();
+	auto _body = PhysicsBody::createCircle(_player->getContentSize().width / 2);
+	_body->setCategoryBitmask(body->getCategoryBitmask());
+	_body->setCollisionBitmask(body->getCollisionBitmask());
+	_player->setPhysicsBody(_body);
+
+	_player->setPosition(getPosition() + Vec2(_player->x / r, _player->y / r)*getContentSize().width / 50 * spritescale);
+	_player->eated = eated;
+	_player->combined = combined;
 
 	return _player;
+}
+
+void Player::losingscale()
+{
+	spritescale = sqrt(spritescale*spritescale - LOSINGSCALE*LOSINGSCALE);
+}
+
+void Player::eat(Sprite* sprite)
+{
+	auto bg = getParent();
+
+	spritescale = BackGround::lenth(spritescale, CIRCLESCALE);
+	runAction(ScaleTo::create(0.8, spritescale / DEFAULTBGSCALE));
+	sprite->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
+		, CCRANDOM_0_1()*bg->getContentSize().height));
+}
+
+void Player::eat_scretion(Sprite* sprite)
+{
+	spritescale = BackGround::lenth(spritescale, SCRETIONSCALE);
+	losingscale();
+	runAction(ScaleTo::create(0.8f, spritescale / DEFAULTBGSCALE));
 }

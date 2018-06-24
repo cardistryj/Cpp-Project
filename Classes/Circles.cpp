@@ -2,30 +2,26 @@
 #include"color.h"
 USING_NS_CC;
 
-bool Circles::init()
+bool Circles::init(Texture2D* texture)
 {
 	if (!Node::create())
 	{
 		return false;
 	}
-	//创建纹理缓存对象
-	Texture2D *texture = Director::getInstance()->getTextureCache()->addImage("ball.png");
 
-	//初始化Vector
 	spriteVector = Vector<Sprite *>(MAXCIRCLENUMBER);
 	for (int i = 0; i < MAXCIRCLENUMBER; i++) {
-		//使用纹理生成小球
-		auto sprite = CCSprite::createWithTexture(texture);
+		auto sprite = Sprite::createWithTexture(texture);
 		spriteVector.pushBack(sprite);
 	}
 
 	return true;
 }
 
-Circles* Circles::create()
+Circles* Circles::create(Texture2D* texture)
 {
 	Circles* circles = new Circles();
-	if (circles->init())
+	if (circles->init(texture))
 		circles->autorelease();
 	else
 	{
@@ -39,18 +35,24 @@ Circles* Circles::create()
 void Circles::addcirclesto(BackGround* bg)
 {
 	Color color;
-	//初始化随机数种子
+
 	srand((unsigned)time(NULL));
-	
 	for (auto sprite : spriteVector)
 	{
 		unsigned randomnumber = rand() % 12;
 		unsigned char *c = color.getColor(randomnumber);
 		sprite->setColor(Color3B(*c, *(c + 1), *(c + 2)));
-		sprite->setScale(CIRCLESCALE / bg->get_scale());
+		sprite->setScale(CIRCLESCALE / DEFAULTBGSCALE);
 		sprite->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
 			, CCRANDOM_0_1()*bg->getContentSize().height));
-		
-		bg->addChild(sprite, 1);  //添加至背景节点便于整体的放缩
+
+		//设置呼吸效果的动画
+		FiniteTimeAction* action1 = (FiniteTimeAction *)ScaleTo::create(0.8f, CIRCLESCALE / DEFAULTBGSCALE*1.2);
+		FiniteTimeAction* action2 = (FiniteTimeAction *)ScaleTo::create(0.8f, CIRCLESCALE / DEFAULTBGSCALE*0.8);
+		ActionInterval* action = Sequence::create(action1, action2, NULL);
+		RepeatForever * repeatforever = RepeatForever::create(action);
+		sprite->runAction(repeatforever);
+
+		bg->addChild(sprite, 0);
 	}
 }
