@@ -102,9 +102,19 @@ void AllPlayersVector::combine()
 					{
 						player1->spritescale = BackGround::lenth(player1->spritescale, player2->spritescale);
 						player1->losingscale();
-						player1->runAction(ScaleTo::create(0.8f, player1->spritescale / DEFAULTBGSCALE));
+
+						//if (!player1->if_action_end)
+						//	player1->stopAllActions();
+						//player1->if_action_end = false;
+						FiniteTimeAction* _action1 = ScaleTo::create(0.8f, player1->spritescale / DEFAULTBGSCALE);
+						//FiniteTimeAction* _action2 = CallFuncN::create(CC_CALLBACK_1(AllPlayersVector::action_end, this));
+						//ActionInterval* _action = Sequence::create(_action1, _action2, NULL);
+						player1->runAction(_action1);
 
 						//ÉèÖÃ¶¯»­
+						//if (!player2->if_action_end)
+						//	player2->stopAllActions();
+						//player2->if_action_end = false;
 						FiniteTimeAction* action1 = MoveTo::create(1.0f, player1->getPosition());
 						FiniteTimeAction* action2 = ScaleTo::create(0.8f, player2->spritescale / DEFAULTBGSCALE / 10);
 						ActionInterval* action3 = Spawn::create(action1, action2, NULL);
@@ -186,6 +196,5 @@ void AllPlayersVector::erase_eated()
 			players->playervector.eraseObject(player_toerase);
 		}
 		players->toerase.clear();
-		players->set_scale();
 	}
 }

@@ -2,12 +2,13 @@
 #define  _APP_DELEGATE_H_
 
 #include "cocos2d.h"
-
+#include"SimpleAudioEngine.h"
 /**
 @brief    The cocos2d Application.
 
 Private inheritance here hides part of interface from Director.
 */
+using namespace CocosDenshion;
 class  AppDelegate : private cocos2d::Application
 {
 public:

@@ -9,6 +9,11 @@ class AllPlayersVector :public cocos2d::Node
 	cocos2d::Vector<PlayerVector*> toerase;
 	void combine(); //玩家小球之间的合并
 	bool check_playerdead();  //检验玩家死亡，返回值表示人类玩家是否死亡
+	void action_end(Ref* pSender)
+	{     //设置动作结束标签
+		Player* player = (Player*)pSender;
+		player->if_action_end = true;
+	}
 
 	void erase_combined(); //删除被合并掉的玩家小球
 	void erase_eated(); //删除被吞噬掉的玩家小球

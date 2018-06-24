@@ -1,6 +1,7 @@
 #include "AppDelegate.h"
 #include "HelloWorldScene.h"
 
+
 // #define USE_AUDIO_ENGINE 1
 // #define USE_SIMPLE_AUDIO_ENGINE 1
 
@@ -54,6 +55,7 @@ static int register_all_packages()
 }
 
 bool AppDelegate::applicationDidFinishLaunching() {
+
     // initialize director
     auto director = Director::getInstance();
     auto glview = director->getOpenGLView();
@@ -101,12 +103,18 @@ bool AppDelegate::applicationDidFinishLaunching() {
     // run
     director->runWithScene(scene);
 
+	SimpleAudioEngine::getInstance()->preloadBackgroundMusic("sound/Synth.mp3");
+	SimpleAudioEngine::getInstance()->preloadBackgroundMusic("sound/Jazz.mp3");
+	SimpleAudioEngine::getInstance()->preloadEffect("sound/botton.wav");
+
     return true;
 }
 
 // This function will be called when the app is inactive. Note, when receiving a phone call it is invoked.
 void AppDelegate::applicationDidEnterBackground() {
     Director::getInstance()->stopAnimation();
+
+	SimpleAudioEngine::getInstance()->pauseBackgroundMusic();
 
 #if USE_AUDIO_ENGINE
     AudioEngine::pauseAll();
@@ -120,6 +128,7 @@ void AppDelegate::applicationDidEnterBackground() {
 void AppDelegate::applicationWillEnterForeground() {
     Director::getInstance()->startAnimation();
 
+	SimpleAudioEngine::getInstance()->resumeBackgroundMusic();
 #if USE_AUDIO_ENGINE
     AudioEngine::resumeAll();
 #elif USE_SIMPLE_AUDIO_ENGINE
