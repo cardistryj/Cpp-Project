@@ -47,8 +47,8 @@ void Circles::addcirclesto(BackGround* bg)
 			, CCRANDOM_0_1()*bg->getContentSize().height));
 
 		//设置呼吸效果的动画
-		FiniteTimeAction* action1 = (FiniteTimeAction *)ScaleTo::create(0.8f, CIRCLESCALE / DEFAULTBGSCALE*1.2);
-		FiniteTimeAction* action2 = (FiniteTimeAction *)ScaleTo::create(0.8f, CIRCLESCALE / DEFAULTBGSCALE*0.8);
+		FiniteTimeAction* action1 = (FiniteTimeAction *)ScaleTo::create(0.8f, CIRCLESCALE / DEFAULTBGSCALE*1.2f);
+		FiniteTimeAction* action2 = (FiniteTimeAction *)ScaleTo::create(0.8f, CIRCLESCALE / DEFAULTBGSCALE*0.8f);
 		ActionInterval* action = Sequence::create(action1, action2, NULL);
 		RepeatForever * repeatforever = RepeatForever::create(action);
 		sprite->runAction(repeatforever);

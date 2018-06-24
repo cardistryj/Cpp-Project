@@ -10,6 +10,8 @@
 class Circles :public cocos2d::Node
 {
 	cocos2d::Vector<cocos2d::Sprite *> spriteVector;
+	//定义将要删除的小球容器
+	cocos2d::Vector<cocos2d::Sprite *> to_erase;
 public:
 	friend class GameControler;
 
@@ -17,4 +19,8 @@ public:
 	bool init(cocos2d::Texture2D*);
 	static Circles* create(cocos2d::Texture2D*);
 	void addcirclesto(BackGround*);
+	inline void erase() { //删除小球
+		for (auto sprite : to_erase)
+			spriteVector.eraseObject(sprite);
+	}
 };

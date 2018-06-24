@@ -5,7 +5,7 @@
 #include"AllPlayersVector.h"
 
 //定义玩家总数量
-#define MAXPLAYERSNUMBER 6
+#define MAXPLAYERSNUMBER 2
 
 //存储控制游戏函数的类
 class GameControler:public cocos2d::Node
@@ -30,12 +30,12 @@ class GameControler:public cocos2d::Node
 			scretions.pushBack(scretion);
 	}
 
-	void move(float &,float &);   //移动人类玩家及背景
+	bool move(float &,float &);   //移动人类玩家及背景,返回值表示人类玩家是否唯一存活
 	void move(float, float, PlayerVector*);  //移动AI玩家
 
-	bool traverse();  //遍历玩家容器与食物、病毒、分泌物,返回人类玩家是否死亡
+	bool traverse(int);  //遍历玩家容器与食物、病毒、分泌物,返回人类玩家是否死亡
 	float inter_traverse(); //在两个玩家容器之间遍历,返回第一个玩家的总质量（即默认情况下返回人类玩家质量）
-	void virus_traverse(); //遍历病毒容器与分泌物，实现它们之间的操作
+	void virus_traverse(bool); //遍历病毒容器与分泌物，实现它们之间的操作
 
 	void erase_scretion();  //删除分泌物
 public:

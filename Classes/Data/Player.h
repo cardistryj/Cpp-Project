@@ -5,8 +5,6 @@
 #define STARTPLSCALE 0.05f
 //定义小球尺寸亏损参数
 #define LOSINGSCALE 0.01f
-//定义分泌物默认放缩参数
-#define SCRETIONSCALE 0.03f
 
 class Player:public cocos2d::Sprite
 {
@@ -24,8 +22,19 @@ class Player:public cocos2d::Sprite
 	void losingscale(); //尺寸亏损，每做过一次动作之后即进行亏损
 	virtual bool init(cocos2d::Texture2D*);
 
-	void eat(cocos2d::Sprite*);  //玩家与食物之间吞噬
-	void eat_scretion(cocos2d::Sprite*); //玩家与分泌物之间的吞噬
+	inline void eat(Sprite* sprite)
+	{ //玩家与食物之间吞噬
+		auto bg = getParent();
+
+		spritescale = BackGround::lenth(spritescale, CIRCLESCALE);
+		runAction(cocos2d::ScaleTo::create(0.8f, spritescale / DEFAULTBGSCALE));
+	}
+	inline void eat_scretion()
+	{//玩家与分泌物之间的吞噬
+		spritescale = BackGround::lenth(spritescale, SCRETIONSCALE);
+		losingscale();
+		runAction(cocos2d::ScaleTo::create(0.8f, spritescale / DEFAULTBGSCALE));
+	} 
 public:
 	friend class GameControler;
 	friend class PlayerVector;

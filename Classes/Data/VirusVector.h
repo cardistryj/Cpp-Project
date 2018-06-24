@@ -13,6 +13,7 @@ public:
 
 	inline bool init(cocos2d::Texture2D*);
 	static VirusVector* create(cocos2d::Texture2D*);
+	void divide(Virus*);  //²¡¶¾µÄ·ÖÁÑ²Ù×÷
 	void addvirusto(BackGround*);
 };
 

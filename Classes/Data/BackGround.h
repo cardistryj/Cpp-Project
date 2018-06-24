@@ -1,10 +1,12 @@
 #pragma once
 #include"cocos2d.h"
 //定义默认背景大小
-#define DEFAULTBGSCALE 6.0f
-
+#define DEFAULTBGSCALE 4.0f
 //定义边缘刚体默认宽度
 #define DEFAULTWIDTH 125.0f
+
+//定义分泌物默认放缩参数
+#define SCRETIONSCALE 0.03f
 //枚举标签类型
 typedef enum
 {
@@ -13,7 +15,8 @@ typedef enum
 	, textureTag
 	, allplayersTag
 	, circlesTag
-	, pausemenuTag
+	, menuTag
+	, labelTag
 	, scorelabelTag
 	, virusTag
 }Tag;

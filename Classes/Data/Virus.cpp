@@ -33,5 +33,12 @@ Virus* Virus::virus_clone(Texture2D* texture)
 	virus->setColor(getColor());
 	virus->setPosition(getPosition());
 	virus->setScale(VIRUSSCALE/DEFAULTBGSCALE);
+
+	auto body = getPhysicsBody();
+	auto _body = PhysicsBody::createCircle(virus->getContentSize().width / 2);
+	_body->setCategoryBitmask(body->getCategoryBitmask());
+	_body->setCollisionBitmask(body->getCollisionBitmask());
+	virus->setPhysicsBody(_body);
+
 	return virus;
 }

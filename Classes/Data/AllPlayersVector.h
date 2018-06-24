@@ -18,4 +18,8 @@ public:
 	inline bool init();
 	static AllPlayersVector* create();
 	void init(BackGround*, int, cocos2d::Texture2D*); //³õÊ¼»¯º¯Êý
+	bool if_survive() {
+		auto players = *(allPlayersVector.begin());
+		return allPlayersVector.size()==1 && !players->ifAIplayer;
+	}
 };
