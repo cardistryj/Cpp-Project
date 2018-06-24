@@ -4,7 +4,7 @@
 
 class GameScene : public cocos2d::LayerColor
 {
-    //定义鼠标事件坐标
+	//定义鼠标事件坐标
 	float event_x = 0;
 	float event_y = 0;
 	//定义是否暂停标签
@@ -13,10 +13,6 @@ class GameScene : public cocos2d::LayerColor
 	bool ifFirstEnter = true;
 	//定义人类玩家是否存活标签
 	bool if_humanplayer_alive = true;
-	//定义人类玩家是否唯一存活
-	bool if_only_survive = false;
-	//定义是否进入自由模式
-	bool if_free = false;
 	//定义游戏是否结束
 	bool if_gameover = false;
 
@@ -29,6 +25,7 @@ public:
 	virtual bool init();
 	virtual void onEnter();
 	virtual void onExit();
+	virtual void cleanup();
 	void update(float dt) override;
 
 	// a selector callback
@@ -41,8 +38,6 @@ public:
 	void pause();
 	//游戏结束的函数
 	void gameover();
-	//进入自由模式
-	void free();
 
 	// implement the "static create()" method manually
 	CREATE_FUNC(GameScene);

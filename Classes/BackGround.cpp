@@ -40,7 +40,7 @@ void BackGround::set_body()
 void BackGround::scalebg(const float scaleparameter)
 {
 	//ÏÞ¶¨·ÅËõ·¶Î§
-	if (backgroundscale - scaleparameter >= 0.6 && backgroundscale - scaleparameter <= DEFAULTBGSCALE * 3 / 2)
+	if (backgroundscale - scaleparameter >= DEFAULTBGSCALE / 2 && backgroundscale - scaleparameter <= DEFAULTBGSCALE * 3 / 2)
 	{
 		backgroundscale = backgroundscale - scaleparameter;
 		auto visibleSize = Director::getInstance()->getVisibleSize();

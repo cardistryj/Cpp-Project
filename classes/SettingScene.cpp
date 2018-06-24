@@ -134,7 +134,7 @@ void SettingScene::menuMusicToggleCallback(cocos2d::Ref* pSender)
 
 void SettingScene::menuOkCallback(cocos2d::Ref* pSender)
 {
-	Director::getInstance()->popScene();
+	Director::getInstance()->popSceneWithTransition<TransitionFadeBL>(1.0);
 
 	SimpleAudioEngine::getInstance()->playEffect("sound/botton.wav");
 }

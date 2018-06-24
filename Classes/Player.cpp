@@ -89,3 +89,20 @@ void Player::losingscale()
 {
 	spritescale = sqrt(spritescale*spritescale - LOSINGSCALE*LOSINGSCALE);
 }
+
+void Player::eat(Sprite* sprite)
+{
+	auto bg = getParent();
+
+	spritescale = BackGround::lenth(spritescale, CIRCLESCALE);
+	runAction(ScaleTo::create(0.8, spritescale / DEFAULTBGSCALE));
+	sprite->setPosition(Vec2(CCRANDOM_0_1()*bg->getContentSize().width
+		, CCRANDOM_0_1()*bg->getContentSize().height));
+}
+
+void Player::eat_scretion(Sprite* sprite)
+{
+	spritescale = BackGround::lenth(spritescale, SCRETIONSCALE);
+	losingscale();
+	runAction(ScaleTo::create(0.8f, spritescale / DEFAULTBGSCALE));
+}

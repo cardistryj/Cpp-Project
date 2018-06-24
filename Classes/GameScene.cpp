@@ -2,8 +2,9 @@
 #include"SettingScene.h"
 #include "HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
+#include "HelpScene.h"
 USING_NS_CC;
-
+using namespace CocosDenshion;
 //定义分数参数
 #define SCOREPARAMETER 10000
 
@@ -21,13 +22,15 @@ Scene* GameScene::createScene()
 bool GameScene::init()
 {
 	//////////////////////////////
-	if (!LayerColor::initWithColor(Color4B(248,248,255,255)))
+	if (!LayerColor::initWithColor(Color4B(248, 248, 255, 255)))
 	{
 		return false;
 	}
 
 	auto visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
+
+	UserDefault::getInstance()->setBoolForKey(COUNT_KEY, true);
 
 	//添加分数显示
 	auto scoreLabel = Label::createWithTTF(" ", "fonts/Marker Felt.ttf", 12);
@@ -43,7 +46,7 @@ bool GameScene::init()
 
 	auto bg = BackGround::create();
 	bg->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
-	bg->setColor(Color3B(245,245,245));
+	bg->setColor(Color3B(245, 245, 245));
 	bg->setTag(bgTag);
 	bg->setCascadeOpacityEnabled(true);
 	bg->set_body();
@@ -84,10 +87,10 @@ void GameScene::onEnter()
 
 	event_x = center.x;
 	event_y = center.y;
-    
+
 	//使用鼠标操作
 	auto listenerMouse = EventListenerMouse::create();
-	
+
 	listenerMouse->onMouseMove = [&](Event *event) {
 		EventMouse* e = (EventMouse*)event;
 		auto bg = (BackGround*)getChildByTag(controlerTag)->getChildByTag(bgTag);
@@ -96,7 +99,7 @@ void GameScene::onEnter()
 		event_x = eventpoint.x;
 		event_y = eventpoint.y;
 	};
-	
+
 	//使用鼠标滚轮进行放缩屏幕
 	listenerMouse->onMouseScroll = [&](Event *event) {
 		EventMouse* e = (EventMouse*)event;
@@ -116,7 +119,7 @@ void GameScene::onEnter()
 	listenerKeyboard->onKeyPressed = [&](EventKeyboard::KeyCode keycode, Event *event) {
 		auto gamecontroler = (GameControler*)getChildByTag(controlerTag);
 		auto bg = (BackGround*)gamecontroler->getChildByTag(bgTag);
-		if (!ifPause&&if_humanplayer_alive&&!if_gameover) {
+		if (!ifPause&&if_humanplayer_alive && !if_gameover) {
 			switch (keycode) {
 			case EventKeyboard::KeyCode::KEY_ESCAPE:
 				pause();
@@ -164,6 +167,13 @@ void GameScene::onExit()
 	unscheduleUpdate();
 }
 
+void GameScene::cleanup()
+{
+	Layer::cleanup();
+	log("GameScene cleanup");
+	SimpleAudioEngine::getInstance()->playBackgroundMusic("sound/Jazz.mp3",true);
+}
+
 void GameScene::update(float dt)
 {
 	auto visibleSize = Director::getInstance()->getVisibleSize();
@@ -171,27 +181,21 @@ void GameScene::update(float dt)
 	auto gamecontroler = (GameControler*)getChildByTag(controlerTag);
 	auto scoreLabel = (Label*)getChildByTag(scorelabelTag);
 
-	if (if_humanplayer_alive&& !if_gameover)
-		if_only_survive=gamecontroler->move(event_x, event_y);
+	if (if_humanplayer_alive && !if_gameover)
+		gamecontroler->move(event_x, event_y);
 	else if (!if_gameover)
 	{
 		gameover();
 		if_gameover = true;
 	}
-
-	if (if_only_survive&&!if_free) {
-		free();
-		if_free = true;
-	}
-
-	gamecontroler->virus_traverse(if_free);
-	score = SCOREPARAMETER*	gamecontroler->inter_traverse();
-	if_humanplayer_alive = gamecontroler->traverse(score);
+	gamecontroler->virus_traverse();
+	score = SCOREPARAMETER * gamecontroler->inter_traverse();
+	if_humanplayer_alive = gamecontroler->traverse();
 
 	if (score >= highestscore)
 		highestscore = score;
 	//更新分数
-	if (if_humanplayer_alive&& !if_gameover)
+	if (if_humanplayer_alive && !if_gameover)
 	{
 		scoreLabel->setString(String::createWithFormat("Score:%d/%d", score, highestscore)->getCString());
 		scoreLabel->setPosition(origin + visibleSize - scoreLabel->getContentSize() / 2);
@@ -200,44 +204,43 @@ void GameScene::update(float dt)
 
 void GameScene::pause()
 {
-	if (getChildByTag(menuTag) == NULL)
-	{
-		auto visibleSize = Director::getInstance()->getVisibleSize();
-		Vec2 origin = Director::getInstance()->getVisibleOrigin();
-		auto bg = (BackGround*)getChildByTag(controlerTag)->getChildByTag(bgTag);
-		bg->runAction(FadeTo::create(0.5, 80));
+	auto visibleSize = Director::getInstance()->getVisibleSize();
+	Vec2 origin = Director::getInstance()->getVisibleOrigin();
+	auto bg = (BackGround*)getChildByTag(controlerTag)->getChildByTag(bgTag);
+	bg->runAction(FadeTo::create(0.5, 80));
 
-		//添加暂停菜单
-		auto continuelabel = Label::createWithTTF("Continue", "fonts/Marker Felt.ttf", 24);
-		continuelabel->setColor(Color3B::RED);
-		auto continueItem = MenuItemLabel::create(continuelabel, CC_CALLBACK_1(GameScene::menuContinueCallback, this));
-		continueItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 80));
+	SimpleAudioEngine::getInstance()->pauseBackgroundMusic();
 
-		auto restartlabel = Label::createWithTTF("Restart", "fonts/Marker Felt.ttf", 24);
-		restartlabel->setColor(Color3B::RED);
-		auto restartItem = MenuItemLabel::create(restartlabel, CC_CALLBACK_1(GameScene::menuRestartCallback, this));
-		restartItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 130));
+	//添加暂停菜单
+	auto continuelabel = Label::createWithTTF("Continue", "fonts/Marker Felt.ttf", 24);
+	continuelabel->setColor(Color3B::RED);
+	auto continueItem = MenuItemLabel::create(continuelabel, CC_CALLBACK_1(GameScene::menuContinueCallback, this));
+	continueItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 80));
 
-		auto settinglabel = Label::createWithTTF("Setting", "fonts/Marker Felt.ttf", 24);
-		settinglabel->setColor(Color3B::RED);
-		auto settingItem = MenuItemLabel::create(settinglabel, CC_CALLBACK_1(GameScene::menuSettingCallback, this));
-		settingItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 180));
+	auto restartlabel = Label::createWithTTF("Restart", "fonts/Marker Felt.ttf", 24);
+	restartlabel->setColor(Color3B::RED);
+	auto restartItem = MenuItemLabel::create(restartlabel, CC_CALLBACK_1(GameScene::menuRestartCallback, this));
+	restartItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 130));
 
-		auto helplabel = Label::createWithTTF("Help", "fonts/Marker Felt.ttf", 24);
-		helplabel->setColor(Color3B::RED);
-		auto helpItem = MenuItemLabel::create(helplabel, CC_CALLBACK_1(GameScene::menuHelpCallback, this));
-		helpItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 230));
+	auto settinglabel = Label::createWithTTF("Setting", "fonts/Marker Felt.ttf", 24);
+	settinglabel->setColor(Color3B::RED);
+	auto settingItem = MenuItemLabel::create(settinglabel, CC_CALLBACK_1(GameScene::menuSettingCallback, this));
+	settingItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 180));
 
-		auto exitlabel = Label::createWithTTF("Exit", "fonts/Marker Felt.ttf", 24);
-		exitlabel->setColor(Color3B::RED);
-		auto exitItem = MenuItemLabel::create(exitlabel, CC_CALLBACK_1(GameScene::menuExitCallback, this));
-		exitItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 280));
+	auto helplabel = Label::createWithTTF("Help", "fonts/Marker Felt.ttf", 24);
+	helplabel->setColor(Color3B::RED);
+	auto helpItem = MenuItemLabel::create(helplabel, CC_CALLBACK_1(GameScene::menuHelpCallback, this));
+	helpItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 230));
 
-		auto menu = Menu::create(continueItem, restartItem, settingItem, helpItem, exitItem, NULL);
-		menu->setPosition(Vec2::ZERO);
-		menu->setTag(menuTag);
-		this->addChild(menu, 2);
-	}
+	auto exitlabel = Label::createWithTTF("Exit", "fonts/Marker Felt.ttf", 24);
+	exitlabel->setColor(Color3B::RED);
+	auto exitItem = MenuItemLabel::create(exitlabel, CC_CALLBACK_1(GameScene::menuExitCallback, this));
+	exitItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 280));
+
+	auto menu = Menu::create(continueItem, restartItem, settingItem, helpItem, exitItem, NULL);
+	menu->setPosition(Vec2::ZERO);
+	menu->setTag(pausemenuTag);
+	this->addChild(menu, 2);
 }
 
 void GameScene::gameover()
@@ -252,7 +255,7 @@ void GameScene::gameover()
 	auto title = Label::createWithTTF("Game over", "fonts/Marker Felt.ttf", 48);
 	title->setColor(Color3B::RED);
 	title->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 80));
-	this->addChild(title,2);
+	this->addChild(title, 2);
 
 	auto restartlabel = Label::createWithTTF("Restart", "fonts/Marker Felt.ttf", 36);
 	restartlabel->setColor(Color3B::RED);
@@ -269,51 +272,20 @@ void GameScene::gameover()
 	this->addChild(menu, 2);
 }
 
-void GameScene::free()
-{
-	if (getChildByTag(menuTag)==NULL)
-	{
-		auto visibleSize = Director::getInstance()->getVisibleSize();
-		Vec2 origin = Director::getInstance()->getVisibleOrigin();
-
-		//添加游戏结束菜单
-		auto title = Label::createWithTTF("You beat all other players!\nYou can still get higher.", "fonts/Marker Felt.ttf", 36);
-		title->setColor(Color3B::RED);
-		title->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 80));
-		title->setTag(labelTag);
-		this->addChild(title, 2);
-		title->setOpacity(200);
-
-		auto continuelabel = Label::createWithTTF("Continue", "fonts/Marker Felt.ttf", 36);
-		continuelabel->setColor(Color3B::RED);
-		auto continueItem = MenuItemLabel::create(continuelabel, CC_CALLBACK_1(GameScene::menuContinueCallback, this));
-		continueItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 180));
-
-		auto restartlabel = Label::createWithTTF("Restart", "fonts/Marker Felt.ttf", 36);
-		restartlabel->setColor(Color3B::RED);
-		auto restartItem = MenuItemLabel::create(restartlabel, CC_CALLBACK_1(GameScene::menuRestartCallback, this));
-		restartItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 230));
-
-		auto exitlabel = Label::createWithTTF("Exit", "fonts/Marker Felt.ttf", 36);
-		exitlabel->setColor(Color3B::RED);
-		auto exitItem = MenuItemLabel::create(exitlabel, CC_CALLBACK_1(GameScene::menuExitCallback, this));
-		exitItem->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - 280));
-
-		auto menu = Menu::create(continueItem, restartItem, exitItem, NULL);
-		menu->setPosition(Vec2::ZERO);
-		menu->setTag(menuTag);
-		menu->setOpacity(200);
-		this->addChild(menu, 2);
-	}
-}
-
 void GameScene::menuContinueCallback(cocos2d::Ref *pSender)
 {
 	ifPause = false;
-	removeChildByTag(menuTag);
-	if (getChildByTag(labelTag))
-		removeChildByTag(labelTag);
+	removeChildByTag(pausemenuTag);
 
+	if (UserDefault::getInstance()->getBoolForKey(SOUND_KEY)&&
+		UserDefault::getInstance()->getBoolForKey(COUNT_KEY))
+	{
+		SimpleAudioEngine::getInstance()->resumeBackgroundMusic();
+	}
+	else if (UserDefault::getInstance()->getBoolForKey(SOUND_KEY))
+	{
+		SimpleAudioEngine::getInstance()->playBackgroundMusic("sound/Jazz.mp3", true);
+	}
 	auto bg = (BackGround*)getChildByTag(controlerTag)->getChildByTag(bgTag);
 	bg->runAction(FadeTo::create(0.5, 255));
 	scheduleUpdate();
@@ -324,14 +296,16 @@ void GameScene::menuRestartCallback(cocos2d::Ref *pSender)
 	auto sc = GameScene::createScene();
 	auto reScene = TransitionCrossFade::create(2.0, sc);
 	Director::getInstance()->replaceScene(reScene);
+	if (UserDefault::getInstance()->getBoolForKey(SOUND_KEY))
+	{
+		SimpleAudioEngine::getInstance()->playBackgroundMusic("sound/Jazz.mp3", true);
+	}
 }
 
 void GameScene::menuSettingCallback(cocos2d::Ref* pSender)
 {
-	removeChildByTag(menuTag);
-	if (getChildByTag(labelTag))
-		removeChildByTag(labelTag);
-
+	UserDefault::getInstance()->setBoolForKey(COUNT_KEY, false);
+	removeChildByTag(pausemenuTag);
 	auto sc = SettingScene::createScene();
 	auto reScene = TransitionFadeTR::create(1.0f, sc);
 	Director::getInstance()->pushScene(reScene);
@@ -339,7 +313,10 @@ void GameScene::menuSettingCallback(cocos2d::Ref* pSender)
 
 void GameScene::menuHelpCallback(cocos2d::Ref* pSender)
 {
-	//
+	auto sc = HelpScene::createScene();
+	removeChildByTag(pausemenuTag);
+	auto reScene = TransitionFadeTR::create(1.0f, sc);
+	Director::getInstance()->pushScene(reScene);
 }
 
 void GameScene::menuExitCallback(cocos2d::Ref *pSender)

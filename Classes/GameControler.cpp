@@ -28,7 +28,7 @@ GameControler* GameControler::create()
 	return gamecontroler;
 }
 
-bool GameControler::move(float &event_x, float &event_y)
+void GameControler::move(float &event_x, float &event_y)
 {
 	auto bg = (BackGround*)getChildByTag(bgTag);
 	auto allplayers = (AllPlayersVector*)bg->getChildByTag(allplayersTag);
@@ -95,8 +95,6 @@ bool GameControler::move(float &event_x, float &event_y)
 		event_x = event_x + backgroundscale / 4 * (speed - averscale)*Vec2(x / r, y / r).x / backgroundscale;
 		event_y = event_y + backgroundscale / 4 * (speed - averscale)*Vec2(x / r, y / r).y / backgroundscale;
 	}
-
-	return allplayers->if_survive();
 }
 
 void GameControler::move(float desitination_x, float desitination_y, PlayerVector* players)
@@ -117,16 +115,15 @@ void GameControler::move(float desitination_x, float desitination_y, PlayerVecto
 	}
 }
 
-bool GameControler::traverse(int score)
+bool GameControler::traverse()
 {
-	auto bg = getChildByTag(bgTag);
+	auto bg = (BackGround*)getChildByTag(bgTag);
 	auto circles = (Circles*)bg->getChildByTag(circlesTag);
 	auto allplayers = (AllPlayersVector*)bg->getChildByTag(allplayersTag);
 	auto virusvector = (VirusVector*)bg->getChildByTag(virusTag);
 
 	bool if_eat_scretion = false;
 	bool if_eat_virus = false;
-	bool if_reduce_circles = (allplayers->if_survive()) || score > 830;
 	for (auto players : allplayers->allPlayersVector)
 	{
 		//判断每个玩家是否进行了吞噬操作的标签
@@ -154,14 +151,6 @@ bool GameControler::traverse(int score)
 					circle->getContentSize().width / 2 * CIRCLESCALE))
 				{
 					player->eat(circle);
-					if (if_reduce_circles)
-					{
-						bg->removeChild(circle);
-						circles->to_erase.pushBack(circle);
-					}
-					else
-						circle->setPosition(cocos2d::Vec2(CCRANDOM_0_1()*bg->getContentSize().width
-							, CCRANDOM_0_1()*bg->getContentSize().height));
 					ifeat = true;
 				}
 			}
@@ -183,7 +172,7 @@ bool GameControler::traverse(int score)
 						player->getContentSize().width / 2 * player->spritescale,
 						scretion->getContentSize().width / 2 * SCRETIONSCALE))
 					{
-						player->eat_scretion();
+						player->eat_scretion(scretion);
 						scretion_toerase.pushBack(scretion);
 						ifeat = true;
 						if_eat_scretion = true;
@@ -212,8 +201,6 @@ bool GameControler::traverse(int score)
 		erase_scretion();
 	if (if_eat_virus)
 		virusvector->erase_virus();
-	if (if_reduce_circles)
-		circles->erase();
 
 	allplayers->combine();
 	return allplayers->check_playerdead();
@@ -227,7 +214,7 @@ float GameControler::inter_traverse()
 		for (auto players2 : allplayers->allPlayersVector) {
 			if (players1 != players2) {
 				if (players1->ifAIplayer) {
-					//players1->aiControl(players2);
+					players1->aiControl(players2);
 				}
 				players1->eat_player(players2);
 			}
@@ -240,7 +227,7 @@ float GameControler::inter_traverse()
 	return humanplayers->sum_scale;
 }
 
-void GameControler::virus_traverse(bool if_free)
+void GameControler::virus_traverse()
 {
 	auto bg = getChildByTag(bgTag);
 	auto virusvector = (VirusVector*)bg->getChildByTag(virusTag);
@@ -252,21 +239,27 @@ void GameControler::virus_traverse(bool if_free)
 	for (int i = 0; i<size; i++)
 	{
 		auto virus = *(virusvector->virusvector.begin() + i);
+		float& virusscale = virus->get_scale();
 		for (auto scretion : scretions)
 		{
 			if (BackGround::isCircleCover(DEFAULTBGSCALE*(virus->getPosition() - scretion->getPosition()),
-				virus->getContentSize().width / 2 * virus->get_scale(),
+				virus->getContentSize().width / 2 * virusscale,
 				scretion->getContentSize().width / 2 * SCRETIONSCALE))
 			{
-				virus->eat_scretion();
+				virusscale = BackGround::lenth(virusscale, SCRETIONSCALE);
+				virus->runAction(ScaleTo::create(0.8f, virusscale / DEFAULTBGSCALE));
 				scretion_toerase.pushBack(scretion);
 				if_eat_scretion = true;
 			}
 		}
-		if (virus->get_scale() > 0.12)
+		if (virusscale > 0.12)
 		{
-			if (!if_free)
-				virusvector->divide(virus);
+			virusscale = VIRUSSCALE;
+			virus->runAction(ScaleTo::create(0.8f, VIRUSSCALE / DEFAULTBGSCALE));
+			auto _virus = virus->virus_clone(texture);
+			bg->addChild(_virus, 2);
+			_virus->runAction(MoveBy::create(0.8f, 30 * Vec2(CCRANDOM_0_1() - 1, CCRANDOM_0_1() - 1)));
+			virusvector->virusvector.pushBack(_virus);
 		}
 	}
 	if (if_eat_scretion)
